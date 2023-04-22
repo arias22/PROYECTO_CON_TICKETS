@@ -30,10 +30,18 @@ typedef struct datos_comp{
 }datos_comp;
 
 struct msg{
+	int ack;
+struct msg{
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
+	long mtype;
+	int id_nodo;
+}mensaje;
+
+
+
 	long type;
 }mensaje;
 
@@ -49,7 +57,7 @@ int main(int argc,char *argv[]) {
 	int buzon=getpid();
 	
 	char* cadena="Quiero entrar en la SC";
-	strcpy(datos_enviar.text,cadena);
+	strcpy(mensaje.text,cadena);
 	
 	 if (argc != 2){
 		printf("formato incorrecto: ./v1_main posicion \n");
@@ -130,7 +138,7 @@ int main(int argc,char *argv[]) {
 	datos->max_ticket=0;
 	datos->procesos++;
 
-	datos_enviar.mi_ticket=0;
+	mensaje.mi_ticket=0;
 	
 	printf("Mi PID %d\n",getpid());
 	printf("Numero de procesos %d\n",datos->procesos);
@@ -149,20 +157,23 @@ int main(int argc,char *argv[]) {
 		datos->mi_ticket = datos->max_ticket + 1; // generas un ticket mayor que el ultimo 
 		sem_post(sem_mutex);
 		
-		datos_enviar.mi_ticket=datos->mi_ticket;
-		datos_enviar.mi_pid=getpid();
-		datos_enviar.mi_id=id_nodos;
+		mensaje.mi_ticket=datos->mi_ticket;
+		mensaje.mi_pid=getpid();
+		mensaje.mi_id=id_nodos;
 
 
 		//ENVIA REQUEST
 	
 		for (i = 0; i <=N-1; i++){
-			if(1235+i==id_nodos){}
-			else{
-				datos_enviar.type=1235+i;
-				msgsnd(msqid, &datos_enviar, sizeof(datos_enviar.text)+3*sizeof(int), 0);//envias mensajes request a todos los nodos,incluido a ti
+			if(1235+i!=id_nodos){
+			
+				mensaje.ack = 0;
+				mensaje.mtype=1235+i;
+
+
+				msgsnd(msqid, &mensaje, 100, 0);//envias mensajes request a todos los nodos	
 				
-				printf("Mensaje enviado a %ld\n",datos_enviar.type);
+				printf("Mensaje enviado a %ld\n",mensaje.mtype);
 			}
 		}
 		
@@ -212,11 +223,11 @@ int main(int argc,char *argv[]) {
 		
 		if(datos->dentro==0){
 			for (i = 0; i <datos->num_pend; i++){
-				
-				ack.mi_pid=getpid();
-				ack.type=datos->id_nodos_pend[i];
+				mensaje.ack = 1;
+				mensaje.mi_pid=getpid();
+				mensaje.mtype=datos->id_nodos_pend[i];
 					
-				//CORREGIR
+				msgsnd(msqid, &mensaje,100, 0);
 				
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
 			}

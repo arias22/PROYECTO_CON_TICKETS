@@ -30,22 +30,16 @@ typedef struct datos_comp{
 }datos_comp;
 
 struct msg{
+	int ack;
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
-	long type;
+	long mtype;
+	int id_nodo;
 }mensaje;
 
-/*struct enviar{
-	int id_aux;
-	long type;
-}datos_enviar;
 
-struct enviar_ack{ 
-    long type;
-    int id_nodo;
-}ack;*/
 
 
 
@@ -124,7 +118,7 @@ int main(int argc,char *argv[]) {
 	
 		
 		
-		msgrcv(msqid, &mensaje, sizeof(mensaje.text)+3*sizeof(int),buzon, 0); 
+		msgrcv(msqid, &mensaje, 100,buzon, 0); 
 		
 		ticket_origen=mensaje.mi_ticket;
 		id_nodo_origen=mensaje.mi_id;
@@ -140,15 +134,13 @@ int main(int argc,char *argv[]) {
 		
 		if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->dentro==0){
 		
-		
-				ack.id_nodo=buzon;
-				ack.type=id_nodo_origen;
+				mensaje.ack = 1;
+				mensaje.id_nodo=buzon;
+				mensaje.mtype=pid_origen;
 				
-				//SEMAFORO PASO !!!!!!!!!!!!!!!!!!
-				msgsnd(msqid, &mensaje, sizeof(int), 0);
-				//msgsnd(cola_main, &ack,sizeof(int), 0);
-
-				printf("Envio OK a buzon %ld\n",ack.type);
+				msgsnd(msqid, &mensaje,100, 0);
+				
+				printf("Envio OK a buzon %ld\n",mensaje.mtype);
 			
 		}else {
 			 
