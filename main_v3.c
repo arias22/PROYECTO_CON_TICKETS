@@ -12,7 +12,7 @@
 #include <math.h>
 #include <signal.h>
 int posicionv;
-
+#define SIZE 50
 // -------------VARIABLES COMPARTIDAS--------------
 typedef struct datos_comp{
 	int mi_ticket;
@@ -32,14 +32,18 @@ typedef struct datos_comp{
 }datos_comp;
 	
 struct msg{
+	long mtype;
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
-	long mtype;
 	int id_nodo;
 	int ack;
 }mensaje;
+struct msgbuf {
+    long mtype;
+    char mtext[SIZE];
+};
 
 
 
@@ -88,8 +92,8 @@ sigaction(2,&ss,NULL);
 	key_t clave1; //clave de acceso a la memoria 1
 	int shmid1; //identificador de la zona de memoria 1
 		//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
-	int msqid = msgget(500,0777 | IPC_CREAT);
-
+	int msqid = msgget(500,0666 | IPC_CREAT);
+	struct msgbuf msgs;
 
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------INICIALIZAMOS ZONA DE MEMORIA COMPARTIDA--------------
@@ -196,6 +200,8 @@ sigaction(2,&ss,NULL);
 		if(datos->primero==0 || datos->num_pend!=datos->estado_anterior){
 
 				//ENVIA REQUEST
+
+			
 	
 			for (i = 0; i <=N-1; i++){
 				if(1235+i!=id_nodos){
@@ -203,8 +209,9 @@ sigaction(2,&ss,NULL);
 					mensaje.ack = 0;
 					mensaje.mtype=1235+i;
 
+					mensaje.mtype = 1235+i;
 
-					msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0);//envias mensajes request a todos los nodos	
+					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
 					
 					printf("Mensaje enviado a %ld\n",mensaje.mtype);
 				}
@@ -240,7 +247,7 @@ sigaction(2,&ss,NULL);
 				mensaje.mi_pid=getpid();
 				mensaje.mtype=datos->id_nodos_pend[i];
 					
-				msgsnd(msqid, &mensaje,sizeof(mensaje.text)+5*sizeof(int), 0);
+				msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
 			}

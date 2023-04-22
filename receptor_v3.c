@@ -16,7 +16,7 @@
 
 int posicionv;
 #define MAX(i,j) (((i)>(j)) ? (i) : (j))
-
+#define SIZE 50
 
 // --------- VARIABLES COMPARTIDAS----------
 typedef struct datos_comp{
@@ -37,14 +37,21 @@ typedef struct datos_comp{
 }datos_comp;
 
 struct msg{
+	long mtype;
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
-	long mtype;
 	int id_nodo;
 	int ack;
 }mensaje;
+
+struct msgbuf {
+    long mtype;
+    char mtext[SIZE];
+};
+
+
 int msqid2_glob;
 int argv_nodo;
 void handle_sigint(int signal) {
@@ -117,9 +124,9 @@ sigaction(2,&ss,NULL);
 	key_t clave1; //clave de acceso a la memoria 1
 	int shmid1; //identificador de la zona de memoria 1
 	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
-	int msqid = msgget(500,0777 | IPC_CREAT);
+	int msqid = msgget(500,0666 | IPC_CREAT);
 	msqid2_glob = msqid;
-
+	struct msgbuf msgs;
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
 	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
@@ -198,15 +205,18 @@ sigaction(2,&ss,NULL);
 	while (1) { 
 	
 		
+		//RECIBE LOS MENSAJE EN SU ID DE NODO
+
 		
-		msgrcv(msqid, &mensaje,  sizeof(mensaje.text)+5*sizeof(int), 0, 0); 
-		
+		msgrcv(msqid, &mensaje,sizeof(struct msg),buzon, 0); 
+		printf("RECOJO MENSAJE\n");
+
+
+
 		ticket_origen=mensaje.mi_ticket;
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
-		
-		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0); }
-		else{
+
 		
 		
 		if(mensaje.ack!=0){
@@ -221,9 +231,9 @@ sigaction(2,&ss,NULL);
 			
 					mensaje.ack = 1;
 					mensaje.id_nodo=buzon;
-					mensaje.mtype=pid_origen;
+					mensaje.mtype=id_nodo_origen;
 					
-					msgsnd(msqid, &mensaje,sizeof(mensaje.text)+5*sizeof(int), 0);
+					msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 					
 					printf("Envio OK a buzon %ld\n",mensaje.mtype);
 				
@@ -247,4 +257,4 @@ sigaction(2,&ss,NULL);
 		}
 		}
 	
-}
+
