@@ -82,8 +82,8 @@ sigaction(2,&ss,NULL);
 	char* cadena="Quiero entrar en la SC";
 	strcpy(mensaje.text,cadena);
 	
-	 if (argc != 2){
-		printf("formato incorrecto: ./v1_main posicion \n");
+	 if (argc != 3){
+		printf("formato incorrecto: ./v1_main posicion N\n");
 		exit(-1);
 	}
 
@@ -287,13 +287,34 @@ sigaction(2,&ss,NULL);
 		sem_post(sem_mutex2);
 
 		//sleep(1);
-		printf("Contador cola 1 %d, contador cola 2 %d",datos->contador_paso_1,datos->contador_paso_2);
+		printf("Contador cola 1 %d, contador cola 2 %d\n",datos->contador_paso_1,datos->contador_paso_2);
 		if(datos->contador_paso_1==0 & datos->contador_paso_2==0){
 			datos->primero=0;
 		}
 
-		if(datos->num_pend==0){
+		if(datos->contador_paso_2!=0){
 			sem_post(sem_name_paso);
+		}
+			if(datos->ultimo==getpid() || datos->contador_paso_1==0 & datos->contador_paso_2==0){
+			datos->ultimo=0;
+			
+			for (i = 0; i <datos->num_pend; i++){
+				mensaje.ack = 1;
+				mensaje.mi_pid=getpid();
+				mensaje.mtype=datos->id_nodos_pend[i];
+					
+				msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
+				
+				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
+			}
+		
+			datos->num_pend = 0; 
+			
+			printf("Todos los OK pendientes enviados\n");
+			
+
+			//sem_wait(sem_mutex_between_main);
+
 		}
 		
 		

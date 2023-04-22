@@ -53,7 +53,7 @@ struct msgbuf {
 
 
 int msqid2_glob;
-char *argv_nodo;
+int argv_nodo;
 void handle_sigint(int signal) {
 
 
@@ -72,26 +72,26 @@ if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
 //BORRAR SEMÁFOROS
 
 char name_mutex[50];
-sprintf(name_mutex, "/MUTEX%s", argv_nodo);;  
+sprintf(name_mutex, "/MUTEX%d", argv_nodo);;  
 if(sem_unlink(name_mutex)==-1) printf("NO SE DESTRUYO BIEN MUTEX\n");
 
 
 char name_mutex_between_main[50];
-sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv_nodo);
+sprintf(name_mutex_between_main, "/MUTEXMAIN%d", argv_nodo);
 if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
 
 
 char name_mutex2[50];
-sprintf(name_mutex2, "/MUTEX1%s",argv_nodo);
+sprintf(name_mutex2, "/MUTEX1%d",argv_nodo);
 if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
 
 
 char name_mutex3[50];
-sprintf(name_mutex3, "/MUTEX2%s", argv_nodo);
+sprintf(name_mutex3, "/MUTEX2%d", argv_nodo);
 if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 
 char name_paso[50];
-sprintf(name_paso, "/MUTEXPASO%s", argv_nodo);
+sprintf(name_paso, "/MUTEXPASO%d", argv_nodo);
 if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
 
     exit(0);
@@ -111,7 +111,7 @@ sigaction(2,&ss,NULL);
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
-	argv_nodo = argv;
+	argv_nodo = atoi(argv[1]);
 	int posicion=atoi(argv[1]);
 	
 	int buzon=1235+posicion;
@@ -216,14 +216,6 @@ sigaction(2,&ss,NULL);
 		ticket_origen=mensaje.mi_ticket;
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
-<<<<<<< HEAD
-		
-		
-		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0); }
-		else{
-=======
-
->>>>>>> 1ff17bd1b14dbb6284e96857f893a21703e05cc0
 		
 		if(mensaje.ack==0){
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
@@ -255,7 +247,9 @@ sigaction(2,&ss,NULL);
 		}else if(mensaje.ack==1){
 			printf("OK recibido de %d\n", mensaje.id_nodo);
 			ack++;
-			if(ack==(N-1) & datos->contador_paso_1==0){
+			printf("valor ack %d\n", ack);
+			printf("valor contador paso1 %d", datos->contador_paso_1);
+			if(ack==(N-1)){
 				printf("Concediendo acceso a SC\n");
 				sem_post(sem_mutex_between_main);
 				ack=0;
@@ -265,8 +259,3 @@ sigaction(2,&ss,NULL);
 		}
 		}
 	
-<<<<<<< HEAD
-}
-=======
-
->>>>>>> 1ff17bd1b14dbb6284e96857f893a21703e05cc0
