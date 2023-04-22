@@ -11,9 +11,24 @@
 #include <fcntl.h>
 #include <math.h>
 #include <signal.h>
+int posicionv;
 
-
-
+void handle_sigint(int signal) {
+	key_t clave1 = ftok(".",posicionv); //creamos la clave que utilizaremos para vincularnos a la zona de memoria ya creada
+	 
+	int shmid1 = shmget(clave1,8*sizeof(int),0);//Creación de zona_mem1, Al no poner el flag IPC_CREAT, estamos suponiendo que dicha memoria ya está creada.
+	 
+	if(shmid1 !=-1){
+		printf("Zona de memoria vinculada OK! con identificador %d \n", shmid1);
+	}else{
+		printf("ERROR al crear zona de memoria 1 !! \n");
+		exit(1);
+	}
+	 
+	datos_comp *datos =(datos_comp *)shmat(shmid1,0,0);//Vinculamos el proceso con la zona de memoria
+	datos->procesos--;
+    exit(0);
+}
 
 
 // -------------VARIABLES COMPARTIDAS--------------
@@ -44,11 +59,15 @@ struct msg{
 
 pid_t getpid(void);
 int main(int argc,char *argv[]) {
-	
+struct sigaction ss;
+ss.sa_handler = handle_sigint;
+ss.sa_flags = 0;
+sigaction(2,&ss,NULL);
  
 	//----------VARIABLES PROPIAS-------------------------------
 	int i=0;
 	int posicion=atoi(argv[1]);
+	posicionv = posicion;
 	int N = atoi(argv[2]);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
