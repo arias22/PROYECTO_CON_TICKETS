@@ -114,14 +114,13 @@ int main(int argc,char *argv[]) {
 	
 		
 		
-		msgrcv(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int),0, 0); 
+		msgrcv(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int),buzon, 0); 
 		
 		ticket_origen=datos_recibir.mi_ticket;
 		id_nodo_origen=datos_recibir.mi_id;
 		pid_origen=datos_recibir.mi_pid;
 		
-		if(datos_recibir.type!=buzon){msgsnd(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int), 0); }
-		else{
+		
 		printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 		
 		sem_wait(sem_mutex);
@@ -148,6 +147,6 @@ int main(int argc,char *argv[]) {
 		printf("Esperando por mensajes...\n");
 		sem_post(sem_mutex);
 		
-		}}
+		}
 	
 }

@@ -162,6 +162,9 @@ int main(int argc,char *argv[]) {
 		datos_enviar.mi_ticket=datos->mi_ticket;
 		datos_enviar.mi_pid=getpid();
 		datos_enviar.mi_id=id_nodos;
+
+
+		//ENVIA REQUEST
 	
 		for (i = 0; i <=N-1; i++){
 			if(1235+i==id_nodos){}
@@ -174,11 +177,19 @@ int main(int argc,char *argv[]) {
 		}
 		
 		
-		for (i = 0; i < N-1; i++){
+		// for (i = 0; i < N-1; i++){
 	
-			//SEMAFORO
-			printf("Mensaje OK recibido de %d\n",datos_recibir.id_nodo);
-		}
+		// 	//SEMAFORO
+		// 	printf("Mensaje OK recibido de %d\n",datos_recibir.id_nodo);
+		// }
+
+		//HAY QUE PONER UN SEMAFORO DE PASO PARA EL PRIMER PROCESO PARA ESPERAR
+
+		//
+		//
+		//
+		//
+
 		
 		printf("Voy a entrar a la seccion critica\n");
 		
