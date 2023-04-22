@@ -11,10 +11,12 @@
 #include <fcntl.h>
 #include <math.h>
 #include <signal.h>
+#include <signal.h>
 
 
-
+int posicionv;
 #define MAX(i,j) (((i)>(j)) ? (i) : (j))
+
 
 // --------- VARIABLES COMPARTIDAS----------
 typedef struct datos_comp{
@@ -43,13 +45,57 @@ struct msg{
 	int id_nodo;
 	int ack;
 }mensaje;
+int msqid2_glob;
+char *argv_nodo;
+void handle_sigint(int signal) {
 
 
+key_t clave1 = ftok(".",posicionv);
+//BORRAR MEMORIA COMPARTIDA
+ int shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);
+  if (shmctl(shmid1, IPC_RMID, NULL) == -1) {
+     perror("Error al borrar la memoria compartida");
+      exit(1);
+   }
+//BORRAR BUZON MENSAJES
+if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
+        perror("msgctl");
 
+    }
+//BORRAR SEMÁFOROS
+
+char name_mutex[50];
+sprintf(name_mutex, "/MUTEX%s", argv_nodo);;  
+if(sem_unlink(name_mutex)==-1) printf("NO SE DESTRUYO BIEN MUTEX\n");
+
+
+char name_mutex_between_main[50];
+sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv_nodo);
+if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
+
+
+char name_mutex2[50];
+sprintf(name_mutex2, "/MUTEX1%s",argv_nodo);
+if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
+
+
+char name_mutex3[50];
+sprintf(name_mutex3, "/MUTEX2%s", argv_nodo);
+if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
+
+char name_paso[50];
+sprintf(name_paso, "/MUTEXPASO%s", argv_nodo);
+if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
+
+    exit(0);
+}
 
 
 int main(int argc,char *argv[]) {
-
+struct sigaction ss;
+ss.sa_handler = handle_sigint;
+ss.sa_flags = 0;
+sigaction(2,&ss,NULL);
 	//-------------VARIABLE PROPIAS--------------------------
 	
 	int id_nodo_origen = 0, ticket_origen = 0, pid_origen=0;
@@ -58,9 +104,10 @@ int main(int argc,char *argv[]) {
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
-		
+	argv_nodo = argv;
 	int posicion=atoi(argv[1]);
 	int buzon=1235+posicion;
+	posicionv = posicion;
 	int N = atoi(argv[2]);
 	int ack = 0;
 
@@ -70,11 +117,11 @@ int main(int argc,char *argv[]) {
 	int shmid1; //identificador de la zona de memoria 1
 	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
 	int msqid = msgget(500,0777 | IPC_CREAT);
-
+	msqid2_glob = msqid;
 
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
-	clave1 = ftok(".",200000+posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
+	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
 	 
 	shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);//Creación de zona_mem1
 	 
@@ -118,8 +165,30 @@ int main(int argc,char *argv[]) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
-		
-	
+	char name_mutex2[50];
+	sprintf(name_mutex2, "/MUTEX1%s", argv[1]);
+	sem_t *sem_mutex2;
+	sem_mutex2 = sem_open(name_mutex2, O_CREAT, 0777, 1);
+	if (sem_mutex2 == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+	char name_mutex3[50];
+	sprintf(name_mutex3, "/MUTEX2%s", argv[1]);
+	sem_t *sem_mutex3;
+	sem_mutex3 = sem_open(name_mutex3, O_CREAT, 0777, 1);
+	if (sem_mutex3 == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}	
+	char name_paso[50];
+	sprintf(name_paso, "/MUTEXPASO%s", argv[1]);
+	sem_t *sem_name_paso;
+	sem_name_paso = sem_open(name_paso, O_CREAT, 0777, 0);
+	if (sem_name_paso == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
 	printf("Mi ID %d\n",buzon);
 	//--------------------------BUCLE DE ACCIONES DEL PROGRAMA-----------------------
 	
