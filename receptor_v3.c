@@ -62,7 +62,7 @@ int main(int argc,char *argv[]) {
 		
 	int posicion=atoi(argv[1]);
 	int buzon=1235+posicion;
-	
+	//int N = atoi(argv[2]);
 
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------

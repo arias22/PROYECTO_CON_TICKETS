@@ -14,9 +14,7 @@
 
 
 
-#define N 4
-#define cola_main 0
-#define cola_receptor 1
+
 
 // -------------VARIABLES COMPARTIDAS--------------
 typedef struct datos_comp{
@@ -56,6 +54,7 @@ int main(int argc,char *argv[]) {
 	//----------VARIABLES PROPIAS-------------------------------
 	int i=0;
 	int posicion=atoi(argv[1]);
+	int N = atoi(argv[2]);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
 	
@@ -71,7 +70,11 @@ int main(int argc,char *argv[]) {
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
 	key_t clave1; //clave de acceso a la memoria 1
 	int shmid1; //identificador de la zona de memoria 1
-	
+		//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
+	int msqid = msgget(500,0777 | IPC_CREAT);
+
+
+	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------INICIALIZAMOS ZONA DE MEMORIA COMPARTIDA--------------
 
 	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para vincularnos a la zona de memoria ya creada
@@ -164,7 +167,7 @@ int main(int argc,char *argv[]) {
 			if(1235+i==id_nodos){}
 			else{
 				datos_enviar.type=1235+i;
-				msgsnd(cola_receptor, &datos_enviar, sizeof(datos_enviar.text)+3*sizeof(int), 0);//envias mensajes request a todos los nodos,incluido a ti
+				msgsnd(msqid, &datos_enviar, sizeof(datos_enviar.text)+3*sizeof(int), 0);//envias mensajes request a todos los nodos,incluido a ti
 				
 				printf("Mensaje enviado a %ld\n",datos_enviar.type);
 			}
@@ -173,7 +176,7 @@ int main(int argc,char *argv[]) {
 		
 		for (i = 0; i < N-1; i++){
 	
-			msgrcv(cola_main, &datos_recibir, sizeof(int),buzon, 0);
+			//SEMAFORO
 			printf("Mensaje OK recibido de %d\n",datos_recibir.id_nodo);
 		}
 		
@@ -212,7 +215,7 @@ int main(int argc,char *argv[]) {
 				ack.mi_pid=getpid();
 				ack.type=datos->id_nodos_pend[i];
 					
-				msgsnd(cola_main, &ack, sizeof(int), 0); //envias las respuestas que te qudaron pendientes, por estar dentro o por que sean mayor que tu
+				//CORREGIR
 				
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
 			}
