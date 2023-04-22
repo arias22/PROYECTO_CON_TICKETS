@@ -53,7 +53,7 @@ struct msgbuf {
 
 
 int msqid2_glob;
-int argv_nodo;
+char *argv_nodo;
 void handle_sigint(int signal) {
 
 
@@ -72,26 +72,26 @@ if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
 //BORRAR SEMÁFOROS
 
 char name_mutex[50];
-sprintf(name_mutex, "/MUTEX%d", argv_nodo);;  
+sprintf(name_mutex, "/MUTEX%s", argv_nodo);;  
 if(sem_unlink(name_mutex)==-1) printf("NO SE DESTRUYO BIEN MUTEX\n");
 
 
 char name_mutex_between_main[50];
-sprintf(name_mutex_between_main, "/MUTEXMAIN%d", argv_nodo);
+sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv_nodo);
 if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
 
 
 char name_mutex2[50];
-sprintf(name_mutex2, "/MUTEX1%d",argv_nodo);
+sprintf(name_mutex2, "/MUTEX1%s",argv_nodo);
 if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
 
 
 char name_mutex3[50];
-sprintf(name_mutex3, "/MUTEX2%d", argv_nodo);
+sprintf(name_mutex3, "/MUTEX2%s", argv_nodo);
 if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 
 char name_paso[50];
-sprintf(name_paso, "/MUTEXPASO%d", argv_nodo);
+sprintf(name_paso, "/MUTEXPASO%s", argv_nodo);
 if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
 
     exit(0);
@@ -111,9 +111,9 @@ sigaction(2,&ss,NULL);
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
-	
+	argv_nodo = argv;
 	int posicion=atoi(argv[1]);
-	argv_nodo = posicion;
+	
 	int buzon=1235+posicion;
 	posicionv = posicion;
 	int N = atoi(argv[2]);
