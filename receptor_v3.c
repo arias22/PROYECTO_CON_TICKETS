@@ -46,7 +46,7 @@ struct msg{
 	int ack;
 }mensaje;
 int msqid2_glob;
-char *argv_nodo;
+char* argv_nodo;
 void handle_sigint(int signal) {
 
 
@@ -64,7 +64,7 @@ if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
     }
 //BORRAR SEMÁFOROS
 
-char name_mutex[50];
+/*char name_mutex[50];
 sprintf(name_mutex, "/MUTEX%s", argv_nodo);;  
 if(sem_unlink(name_mutex)==-1) printf("NO SE DESTRUYO BIEN MUTEX\n");
 
@@ -85,7 +85,7 @@ if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 
 char name_paso[50];
 sprintf(name_paso, "/MUTEXPASO%s", argv_nodo);
-if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
+if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");*/
 
     exit(0);
 }
@@ -104,7 +104,7 @@ sigaction(2,&ss,NULL);
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
-	argv_nodo = argv;
+	strcpy(argv_nodo, argv[1]);
 	int posicion=atoi(argv[1]);
 	int buzon=1235+posicion;
 	posicionv = posicion;
@@ -198,7 +198,7 @@ sigaction(2,&ss,NULL);
 	
 		
 		
-		msgrcv(msqid, &mensaje, 100, 0, 0); 
+		msgrcv(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0, 0); 
 		
 		ticket_origen=mensaje.mi_ticket;
 		id_nodo_origen=mensaje.mi_id;
