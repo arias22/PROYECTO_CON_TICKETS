@@ -204,31 +204,31 @@ sigaction(2,&ss,NULL);
 					mensaje.mtype=1235+i;
 
 
-					msgsnd(msqid, &mensaje, 100, 0);//envias mensajes request a todos los nodos	
+					msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0);//envias mensajes request a todos los nodos	
 					
 					printf("Mensaje enviado a %ld\n",mensaje.mtype);
 				}
 			}
 
 			datos->estado_anterior=datos->num_pend;
-			printf("Numero estado pendientes: %d",datos->estado_anterior);
+			printf("Numero estado pendientes: %d\n",datos->estado_anterior);
 
 			if(datos->primero==0){
 			datos->primero=1;
 			datos->contador_paso_1++;
-			printf("Entro semáforo paso 1");
+			printf("Entro semáforo paso 1\n");
 			sem_wait(sem_mutex_between_main);
 			}else{
 			datos->ultimo=getpid();
 			datos->contador_paso_2++;
-			printf("Me marco como ultimo");
-			printf("Entro semáforo paso 2");
+			printf("Me marco como ultimo\n");
+			printf("Entro semáforo paso 2\n");
 			sem_wait(sem_name_paso);
 			}
 
 		}else{
 			datos->contador_paso_2++;
-			printf("Entro semáforo paso 2");
+			printf("Entro semáforo paso 2\n");
 			sem_wait(sem_name_paso);
 		}}
 		
@@ -240,7 +240,7 @@ sigaction(2,&ss,NULL);
 				mensaje.mi_pid=getpid();
 				mensaje.mtype=datos->id_nodos_pend[i];
 					
-				msgsnd(msqid, &mensaje,100, 0);
+				msgsnd(msqid, &mensaje,sizeof(mensaje.text)+5*sizeof(int), 0);
 				
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
 			}

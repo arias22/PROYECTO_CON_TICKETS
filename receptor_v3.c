@@ -74,7 +74,7 @@ int main(int argc,char *argv[]) {
 
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
-	clave1 = ftok(".",200000+posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
+	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
 	 
 	shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);//Creación de zona_mem1
 	 
@@ -135,7 +135,7 @@ int main(int argc,char *argv[]) {
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
 		
-		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, 100, 0); }
+		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0); }
 		else{
 		
 		
@@ -153,7 +153,7 @@ int main(int argc,char *argv[]) {
 					mensaje.id_nodo=buzon;
 					mensaje.mtype=pid_origen;
 					
-					msgsnd(msqid, &mensaje,100, 0);
+					msgsnd(msqid, &mensaje,sizeof(mensaje.text)+5*sizeof(int), 0);
 					
 					printf("Envio OK a buzon %ld\n",mensaje.mtype);
 				
