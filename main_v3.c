@@ -102,7 +102,7 @@ int main(int argc,char *argv[]) {
 	     exit(-1);
 	}
 	char name_mutex2[50];
-	sprintf(name_mutex2, "/MUTEX%s", argv[1]);
+	sprintf(name_mutex2, "/MUTEX1%s", argv[1]);
 	sem_t *sem_mutex2;
 	sem_mutex2 = sem_open(name_mutex2, O_CREAT, 0777, 1);
 	if (sem_mutex2 == SEM_FAILED) {
@@ -110,7 +110,7 @@ int main(int argc,char *argv[]) {
 	     exit(-1);
 	}
 	char name_mutex3[50];
-	sprintf(name_mutex3, "/MUTEX%s", argv[1]);
+	sprintf(name_mutex3, "/MUTEX2%s", argv[1]);
 	sem_t *sem_mutex3;
 	sem_mutex3 = sem_open(name_mutex3, O_CREAT, 0777, 1);
 	if (sem_mutex3 == SEM_FAILED) {
