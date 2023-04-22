@@ -106,6 +106,7 @@ sigaction(2,&ss,NULL);
 	}
 	argv_nodo = argv;
 	int posicion=atoi(argv[1]);
+	
 	int buzon=1235+posicion;
 	posicionv = posicion;
 	int N = atoi(argv[2]);
