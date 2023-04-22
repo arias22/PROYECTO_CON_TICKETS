@@ -29,6 +29,8 @@ typedef struct datos_comp{
 	int procesos;
 	int primero;
 	int ultimo;
+	int contador_paso_1;
+	int contador_paso_2;
 }datos_comp;
 
 struct msg{
@@ -93,6 +95,8 @@ int main(int argc,char *argv[]) {
 	datos->procesos=0;
 	datos->primero=0;
 	datos->ultimo=0;
+	datos->contador_paso_1=0;
+	datos->contador_paso_2=0;
 		
 	//---------------------------------------DECLARACION SEMÁFOROS---------------------
 	char name_mutex[50];

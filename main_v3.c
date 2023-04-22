@@ -44,6 +44,8 @@ typedef struct datos_comp{
 	int procesos;
 	int primero;
 	int ultimo;
+	int contador_paso_1;
+	int contador_paso_2;
 }datos_comp;
 	
 struct msg{
@@ -177,6 +179,8 @@ sigaction(2,&ss,NULL);
 		// Sección crítica
 	 	printf("Quiero entrar en la Sección Critica\n");
 	 	
+
+
 	 	sem_wait(sem_mutex);
 		datos->quiero = 1;
 		//datos->dentro++; 
@@ -187,22 +191,65 @@ sigaction(2,&ss,NULL);
 		mensaje.mi_pid=getpid();
 		mensaje.mi_id=id_nodos;
 
-
-		//ENVIA REQUEST
-	
-		for (i = 0; i <=N-1; i++){
-			if(1235+i!=id_nodos){
-			
-				mensaje.ack = 0;
-				mensaje.mtype=1235+i;
-
-
-				msgsnd(msqid, &mensaje, 100, 0);//envias mensajes request a todos los nodos	
-				
-				printf("Mensaje enviado a %ld\n",mensaje.mtype);
-			}
-		}
 		
+
+		if(datos->primero==0 || datos->num_pend!=0){
+
+				//ENVIA REQUEST
+	
+			for (i = 0; i <=N-1; i++){
+				if(1235+i!=id_nodos){
+				
+					mensaje.ack = 0;
+					mensaje.mtype=1235+i;
+
+
+					msgsnd(msqid, &mensaje, 100, 0);//envias mensajes request a todos los nodos	
+					
+					printf("Mensaje enviado a %ld\n",mensaje.mtype);
+				}
+			}
+
+			if(datos->primero==0){
+			datos->primero=1;
+			datos->contador_paso_1++;
+			sem_wait(sem_mutex_between_main);
+			}else{
+			datos->ultimo=getpid();
+			datos->contador_paso_1++;
+			sem_wait(name_paso);
+
+
+		}else{
+			datos->contador_paso_2++;
+			sem_wait(name_paso);
+			if(datos->num_pend!=0){
+			
+		}}
+		
+		if(datos->ultimo==getpid()){
+
+			if(datos->dentro==0){
+			for (i = 0; i <datos->num_pend; i++){
+				mensaje.ack = 1;
+				mensaje.mi_pid=getpid();
+				mensaje.mtype=datos->id_nodos_pend[i];
+					
+				msgsnd(msqid, &mensaje,100, 0);
+				
+				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
+			}
+		
+			datos->num_pend = 0; 
+			
+			printf("Todos los OK pendientes enviados\n");
+			}
+
+			sem_wait(sem_mutex_between_main);
+
+		}
+				
+			
 		
 		// for (i = 0; i < N-1; i++){
 	
@@ -224,15 +271,7 @@ sigaction(2,&ss,NULL);
 		datos->dentro++;
 		sem_post(sem_mutex3);
 		
-		if(datos->primero==0){
-			datos->primero=1;
-			sem_wait(sem_mutex_between_main);
-		}else{
-			sem_wait(name_paso);
-			if(datos->num_pend!=0){
-				sem_wait(sem_mutex_between_main);
-			}
-		}
+		
 		
 		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
 		
@@ -251,31 +290,17 @@ sigaction(2,&ss,NULL);
 		datos->dentro--;
 		sem_post(sem_mutex2);
 		
-		if(datos->num_pend==0){
-			sem_post(name_paso);
+		if(datos->contador_paso_1==0 & datos->contador_paso_2==0){
+			datos->primero=0;
 		}
 		
-		if(datos->dentro==0){
-			for (i = 0; i <datos->num_pend; i++){
-				mensaje.ack = 1;
-				mensaje.mi_pid=getpid();
-				mensaje.mtype=datos->id_nodos_pend[i];
-					
-				msgsnd(msqid, &mensaje,100, 0);
-				
-				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
-			}
-		
-			datos->num_pend = 0; 
-			
-			printf("Todos los OK pendientes enviados\n");
-		}
 		
 		
 		printf("Fuera de la Sección Critica\n");		
 		
 	}
 	 
+}
 }
 
 
