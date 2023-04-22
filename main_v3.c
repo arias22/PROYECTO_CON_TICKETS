@@ -68,21 +68,21 @@ ss.sa_flags = 0;
 sigaction(2,&ss,NULL);
 
 	//----------VARIABLES PROPIAS-------------------------------
-	
+	int i=0;
+	int posicion=atoi(argv[1]);
+	posicionv = posicion;
+	int N = atoi(argv[2]);
+	int id_nodos=1235+posicion;
+	int buzon=getpid();
+
 	char* cadena="Quiero entrar en la SC";
 	strcpy(mensaje.text,cadena);
 	
-	 if (argc != 3){
-		printf("formato incorrecto: ./v1_main posicion N \n");
+	 if (argc != 2){
+		printf("formato incorrecto: ./v1_main posicion \n");
 		exit(-1);
 	}
-	int posicion=atoi(argv[1]);
-	int N = atoi(argv[2]);
-	posicionv = posicion;
-	int i=0;
-	int id_nodos=1235+posicion;
-	int buzon=getpid();
-	
+
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
 	key_t clave1; //clave de acceso a la memoria 1
