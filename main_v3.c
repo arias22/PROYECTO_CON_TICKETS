@@ -46,6 +46,7 @@ typedef struct datos_comp{
 
 struct msg{
 	int ack;
+struct msg{
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
@@ -56,6 +57,8 @@ struct msg{
 
 
 
+	long type;
+}mensaje;
 
 pid_t getpid(void);
 int main(int argc,char *argv[]) {

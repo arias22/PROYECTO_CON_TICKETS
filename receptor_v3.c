@@ -49,14 +49,14 @@ int main(int argc,char *argv[]) {
 	
 	int id_nodo_origen = 0, ticket_origen = 0, pid_origen=0;
 	
-	 if (argc != 2){
-		printf("formato incorrecto: ./v1_receptor posicion \n");
+	 if (argc != 3){
+		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
 		
 	int posicion=atoi(argv[1]);
 	int buzon=1235+posicion;
-	//int N = atoi(argv[2]);
+	int N = atoi(argv[2]);
 
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
@@ -98,6 +98,16 @@ int main(int argc,char *argv[]) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
+
+	char name_mutex_between_main[50];
+	sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv[1]);
+	sem_t *sem_mutex_between_main;
+	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 1);
+	if (sem_mutex_between_main == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+		
 	
 	printf("Mi ID %d\n",buzon);
 	//--------------------------BUCLE DE ACCIONES DEL PROGRAMA-----------------------
