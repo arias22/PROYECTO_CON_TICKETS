@@ -140,7 +140,7 @@ sigaction(2,&ss,NULL);
 	char name_mutex_between_main[50];
 	sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv[1]);
 	sem_t *sem_mutex_between_main;
-	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 1);
+	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 0);
 	if (sem_mutex_between_main == SEM_FAILED) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
@@ -165,6 +165,7 @@ sigaction(2,&ss,NULL);
 	datos->num_pend=0;
 	datos->max_ticket=0;
 	datos->procesos++;
+	mensaje.ack=0;
 
 	mensaje.mi_ticket=0;
 	
@@ -218,19 +219,22 @@ sigaction(2,&ss,NULL);
 			datos->contador_paso_1++;
 			printf("Entro semáforo paso 1\n");
 			sem_wait(sem_mutex_between_main);
+			datos->contador_paso_1--;
 			}else{
 			datos->ultimo=getpid();
 			datos->contador_paso_2++;
 			printf("Me marco como ultimo\n");
 			printf("Entro semáforo paso 2\n");
 			sem_wait(sem_name_paso);
+			datos->contador_paso_2--;
 			}
 
 		}else{
 			datos->contador_paso_2++;
 			printf("Entro semáforo paso 2\n");
 			sem_wait(sem_name_paso);
-		}}
+			datos->contador_paso_2--;
+		}
 		
 		if(datos->ultimo==getpid()){
 			datos->ultimo=0;
@@ -274,9 +278,15 @@ sigaction(2,&ss,NULL);
 		datos->quiero=0;
 		datos->dentro--;
 		sem_post(sem_mutex2);
-		
+
+		//sleep(1);
+		printf("Contador cola 1 %d, contador cola 2 %d",datos->contador_paso_1,datos->contador_paso_2);
 		if(datos->contador_paso_1==0 & datos->contador_paso_2==0){
 			datos->primero=0;
+		}
+
+		if(datos->num_pend==0){
+			sem_post(sem_name_paso);
 		}
 		
 		
@@ -284,6 +294,7 @@ sigaction(2,&ss,NULL);
 		
 	
 	 
+}
 }
 
 

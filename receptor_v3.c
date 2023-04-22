@@ -161,7 +161,7 @@ sigaction(2,&ss,NULL);
 	char name_mutex_between_main[50];
 	sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv[1]);
 	sem_t *sem_mutex_between_main;
-	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 1);
+	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 0);
 	if (sem_mutex_between_main == SEM_FAILED) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
@@ -205,11 +205,11 @@ sigaction(2,&ss,NULL);
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
 		
+		
 		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0); }
 		else{
 		
-		
-		if(mensaje.ack!=0){
+		if(mensaje.ack==0){
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 			
 			sem_wait(sem_mutex);
@@ -221,7 +221,7 @@ sigaction(2,&ss,NULL);
 			
 					mensaje.ack = 1;
 					mensaje.id_nodo=buzon;
-					mensaje.mtype=pid_origen;
+					mensaje.mtype=id_nodo_origen;
 					
 					msgsnd(msqid, &mensaje,sizeof(mensaje.text)+5*sizeof(int), 0);
 					
@@ -229,18 +229,20 @@ sigaction(2,&ss,NULL);
 				
 			}else {
 				
-				datos->id_nodos_pend[datos->num_pend++]= pid_origen;
+				datos->id_nodos_pend[datos->num_pend++]= id_nodo_origen;
 				printf("Numero de pendientes: %d\n",datos->num_pend);
 			
 			}
 			printf("Esperando por mensajes...\n");
 			sem_post(sem_mutex);
 
-		}else{
-			printf("OK recibido de %d", id_nodo_origen);
+		}else if(mensaje.ack==1){
+			printf("OK recibido de %d\n", mensaje.id_nodo);
 			ack++;
-			if(ack==datos->procesos){
+			if(ack==(N-1) & datos->contador_paso_1==0){
+				printf("Concediendo acceso a SC\n");
 				sem_post(sem_mutex_between_main);
+				ack=0;
 			}
 		}
 		
