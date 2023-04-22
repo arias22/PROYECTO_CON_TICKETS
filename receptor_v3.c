@@ -13,8 +13,7 @@
 #include <signal.h>
 
 
-#define cola_main 0
-#define cola_receptor 1
+
 #define MAX(i,j) (((i)>(j)) ? (i) : (j))
 
 // --------- VARIABLES COMPARTIDAS----------
@@ -69,7 +68,11 @@ int main(int argc,char *argv[]) {
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
 	key_t clave1; //clave de acceso a la memoria 1
 	int shmid1; //identificador de la zona de memoria 1
-	 
+	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
+	int msqid = msgget(500,0777 | IPC_CREAT);
+
+
+	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
 	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
 	 
@@ -111,13 +114,13 @@ int main(int argc,char *argv[]) {
 	
 		
 		
-		msgrcv(cola_receptor, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int),0, 0); 
+		msgrcv(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int),0, 0); 
 		
 		ticket_origen=datos_recibir.mi_ticket;
 		id_nodo_origen=datos_recibir.mi_id;
 		pid_origen=datos_recibir.mi_pid;
 		
-		if(datos_recibir.type!=buzon){msgsnd(cola_receptor, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int), 0); }
+		if(datos_recibir.type!=buzon){msgsnd(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int), 0); }
 		else{
 		printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 		
@@ -132,7 +135,7 @@ int main(int argc,char *argv[]) {
 				ack.id_nodo=buzon;
 				ack.type=pid_origen;
 				
-				msgsnd(cola_main, &ack,sizeof(int), 0);
+				//SEMAFORO PASO !!!!!!!!!!!!!!!!!!
 				
 				printf("Envio OK a buzon %ld\n",ack.type);
 			
