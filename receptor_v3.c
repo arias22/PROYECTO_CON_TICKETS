@@ -74,7 +74,7 @@ int main(int argc,char *argv[]) {
 
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
-	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
+	clave1 = ftok(".",200000+posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
 	 
 	shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);//Creación de zona_mem1
 	 
@@ -129,11 +129,15 @@ int main(int argc,char *argv[]) {
 	
 		
 		
-		msgrcv(msqid, &mensaje, 100,buzon, 0); 
+		msgrcv(msqid, &mensaje, 100, 0, 0); 
 		
 		ticket_origen=mensaje.mi_ticket;
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
+		
+		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, 100, 0); }
+		else{
+		
 		
 		if(mensaje.ack!=0){
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
@@ -166,11 +170,11 @@ int main(int argc,char *argv[]) {
 			printf("OK recibido de %d", id_nodo_origen);
 			ack++;
 			if(ack==datos->procesos){
-				sem_post(name_mutex_between_main);
+				sem_post(sem_mutex_between_main);
 			}
 		}
 		
-		
+		}
 		}
 	
 }
