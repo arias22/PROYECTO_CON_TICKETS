@@ -16,7 +16,7 @@
 
 int posicionv;
 #define MAX(i,j) (((i)>(j)) ? (i) : (j))
-
+#define SIZE 50
 
 // --------- VARIABLES COMPARTIDAS----------
 typedef struct datos_comp{
@@ -37,16 +37,23 @@ typedef struct datos_comp{
 }datos_comp;
 
 struct msg{
+	long mtype;
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
-	long mtype;
 	int id_nodo;
 	int ack;
 }mensaje;
+
+struct msgbuf {
+    long mtype;
+    char mtext[SIZE];
+};
+
+
 int msqid2_glob;
-int argv_nodo;
+char *argv_nodo;
 void handle_sigint(int signal) {
 
 
@@ -65,26 +72,26 @@ if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
 //BORRAR SEMÁFOROS
 
 char name_mutex[50];
-sprintf(name_mutex, "/MUTEX%d", argv_nodo);;  
+sprintf(name_mutex, "/MUTEX%s", argv_nodo);;  
 if(sem_unlink(name_mutex)==-1) printf("NO SE DESTRUYO BIEN MUTEX\n");
 
 
 char name_mutex_between_main[50];
-sprintf(name_mutex_between_main, "/MUTEXMAIN%d", argv_nodo);
+sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv_nodo);
 if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
 
 
 char name_mutex2[50];
-sprintf(name_mutex2, "/MUTEX1%d",argv_nodo);
+sprintf(name_mutex2, "/MUTEX1%s",argv_nodo);
 if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
 
 
 char name_mutex3[50];
-sprintf(name_mutex3, "/MUTEX2%d", argv_nodo);
+sprintf(name_mutex3, "/MUTEX2%s", argv_nodo);
 if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 
 char name_paso[50];
-sprintf(name_paso, "/MUTEXPASO%d", argv_nodo);
+sprintf(name_paso, "/MUTEXPASO%s", argv_nodo);
 if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
 
     exit(0);
@@ -104,9 +111,9 @@ sigaction(2,&ss,NULL);
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
-	
+	argv_nodo = argv;
 	int posicion=atoi(argv[1]);
-	argv_nodo = posicion;
+	
 	int buzon=1235+posicion;
 	posicionv = posicion;
 	int N = atoi(argv[2]);
@@ -117,9 +124,9 @@ sigaction(2,&ss,NULL);
 	key_t clave1; //clave de acceso a la memoria 1
 	int shmid1; //identificador de la zona de memoria 1
 	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
-	int msqid = msgget(500,0777 | IPC_CREAT);
+	int msqid = msgget(500,0666 | IPC_CREAT);
 	msqid2_glob = msqid;
-
+	struct msgbuf msgs;
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
 	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
@@ -198,16 +205,25 @@ sigaction(2,&ss,NULL);
 	while (1) { 
 	
 		
+		//RECIBE LOS MENSAJE EN SU ID DE NODO
+
 		
-		msgrcv(msqid, &mensaje,  sizeof(mensaje.text)+5*sizeof(int), 0, 0); 
-		
+		msgrcv(msqid, &mensaje,sizeof(struct msg),buzon, 0); 
+		printf("RECOJO MENSAJE\n");
+
+
+
 		ticket_origen=mensaje.mi_ticket;
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
+<<<<<<< HEAD
 		
 		
 		if(mensaje.mtype!=buzon){msgsnd(msqid, &mensaje, sizeof(mensaje.text)+5*sizeof(int), 0); }
 		else{
+=======
+
+>>>>>>> 1ff17bd1b14dbb6284e96857f893a21703e05cc0
 		
 		if(mensaje.ack==0){
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
@@ -223,7 +239,7 @@ sigaction(2,&ss,NULL);
 					mensaje.id_nodo=buzon;
 					mensaje.mtype=id_nodo_origen;
 					
-					msgsnd(msqid, &mensaje,sizeof(mensaje.text)+5*sizeof(int), 0);
+					msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 					
 					printf("Envio OK a buzon %ld\n",mensaje.mtype);
 				
@@ -249,4 +265,8 @@ sigaction(2,&ss,NULL);
 		}
 		}
 	
+<<<<<<< HEAD
 }
+=======
+
+>>>>>>> 1ff17bd1b14dbb6284e96857f893a21703e05cc0
