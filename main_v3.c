@@ -13,7 +13,37 @@
 #include <signal.h>
 int posicionv;
 
-void handle_sigint(int signal) {
+// -------------VARIABLES COMPARTIDAS--------------
+typedef struct datos_comp{
+	int mi_ticket;
+	int mi_id;
+	int id_nodos_pend[100];
+	int num_pend;
+	int quiero;
+	int max_ticket;
+	//añadidas
+	int dentro;
+	int procesos;
+	int primero;
+	int ultimo;
+	int contador_paso_1;
+	int contador_paso_2;
+	int estado_anterior;
+}datos_comp;
+	
+struct msg{
+	int mi_ticket;
+	int mi_pid;
+	int mi_id;
+	char text[100];
+	long mtype;
+	int id_nodo;
+	int ack;
+}mensaje;
+
+
+
+ void handle_sigint(int signal) {
 	key_t clave1 = ftok(".",posicionv); //creamos la clave que utilizaremos para vincularnos a la zona de memoria ya creada
 	 
 	int shmid1 = shmget(clave1,8*sizeof(int),0);//Creación de zona_mem1, Al no poner el flag IPC_CREAT, estamos suponiendo que dicha memoria ya está creada.
@@ -30,43 +60,13 @@ void handle_sigint(int signal) {
     exit(0);
 }
 
-
-// -------------VARIABLES COMPARTIDAS--------------
-typedef struct datos_comp{
-	int mi_ticket;
-	int mi_id;
-	int id_nodos_pend[100];
-	int num_pend;
-	int quiero;
-	int max_ticket;
-	//añadidas
-	int dentro;
-	int procesos;
-	int primero;
-	int ultimo;
-	int contador_paso_1;
-	int contador_paso_2;
-}datos_comp;
-	
-struct msg{
-	int mi_ticket;
-	int mi_pid;
-	int mi_id;
-	char text[100];
-	long mtype;
-	int id_nodo;
-	int ack;
-}mensaje;
-
-
-
 pid_t getpid(void);
 int main(int argc,char *argv[]) {
 struct sigaction ss;
 ss.sa_handler = handle_sigint;
 ss.sa_flags = 0;
 sigaction(2,&ss,NULL);
- 
+
 	//----------VARIABLES PROPIAS-------------------------------
 	int i=0;
 	int posicion=atoi(argv[1]);
@@ -193,7 +193,7 @@ sigaction(2,&ss,NULL);
 
 		
 
-		if(datos->primero==0 || datos->num_pend!=0){
+		if(datos->primero==0 || datos->num_pend!=datos->estado_anterior){
 
 				//ENVIA REQUEST
 	
@@ -210,26 +210,31 @@ sigaction(2,&ss,NULL);
 				}
 			}
 
+			datos->estado_anterior=datos->num_pend;
+			printf("Numero estado pendientes: %d",datos->estado_anterior);
+
 			if(datos->primero==0){
 			datos->primero=1;
 			datos->contador_paso_1++;
+			printf("Entro semáforo paso 1");
 			sem_wait(sem_mutex_between_main);
 			}else{
 			datos->ultimo=getpid();
-			datos->contador_paso_1++;
+			datos->contador_paso_2++;
+			printf("Me marco como ultimo");
+			printf("Entro semáforo paso 2");
 			sem_wait(name_paso);
-
+			}
 
 		}else{
 			datos->contador_paso_2++;
+			printf("Entro semáforo paso 2");
 			sem_wait(name_paso);
-			if(datos->num_pend!=0){
-			
 		}}
 		
 		if(datos->ultimo==getpid()){
-
-			if(datos->dentro==0){
+			datos->ultimo=0;
+			
 			for (i = 0; i <datos->num_pend; i++){
 				mensaje.ack = 1;
 				mensaje.mi_pid=getpid();
@@ -243,35 +248,15 @@ sigaction(2,&ss,NULL);
 			datos->num_pend = 0; 
 			
 			printf("Todos los OK pendientes enviados\n");
-			}
+			
 
 			sem_wait(sem_mutex_between_main);
 
 		}
-				
-			
-		
-		// for (i = 0; i < N-1; i++){
-	
-		// 	//SEMAFORO
-		// 	printf("Mensaje OK recibido de %d\n",datos_recibir.id_nodo);
-		// }
-
-		//HAY QUE PONER UN SEMAFORO DE PASO PARA EL PRIMER PROCESO PARA ESPERAR
-
-		//
-		//
-		//
-		//
-
-		
-		printf("Voy a entrar a la seccion critica\n");
 		
 		sem_wait(sem_mutex3);
 		datos->dentro++;
 		sem_post(sem_mutex3);
-		
-		
 		
 		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
 		
@@ -295,13 +280,12 @@ sigaction(2,&ss,NULL);
 		}
 		
 		
-		
 		printf("Fuera de la Sección Critica\n");		
 		
-	}
+	
 	 
 }
-}
+
 
 
 

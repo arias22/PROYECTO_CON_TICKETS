@@ -31,6 +31,7 @@ typedef struct datos_comp{
 	int ultimo;
 	int contador_paso_1;
 	int contador_paso_2;
+	int estado_anterior;
 }datos_comp;
 
 struct msg{
@@ -97,6 +98,7 @@ int main(int argc,char *argv[]) {
 	datos->ultimo=0;
 	datos->contador_paso_1=0;
 	datos->contador_paso_2=0;
+	datos->estado_anterior=0;
 		
 	//---------------------------------------DECLARACION SEMÁFOROS---------------------
 	char name_mutex[50];
@@ -133,7 +135,7 @@ int main(int argc,char *argv[]) {
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
 		
-		if(mensaje.ack==0){
+		if(mensaje.ack!=0){
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 			
 			sem_wait(sem_mutex);
