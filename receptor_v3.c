@@ -29,23 +29,17 @@ typedef struct datos_comp{
 	int procesos;
 }datos_comp;
 
-struct recibir{
+struct msg{
+	int ack;
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
-	long type;
-}datos_recibir;
+	long mtype;
+	int id_nodo;
+}mensaje;
 
-struct enviar{
-	int id_aux;
-	long type;
-}datos_enviar;
 
-struct enviar_ack{ 
-    long type;
-    int id_nodo;
-}ack;
 
 
 
@@ -114,11 +108,11 @@ int main(int argc,char *argv[]) {
 	
 		
 		
-		msgrcv(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int),buzon, 0); 
+		msgrcv(msqid, &mensaje, 100,buzon, 0); 
 		
-		ticket_origen=datos_recibir.mi_ticket;
-		id_nodo_origen=datos_recibir.mi_id;
-		pid_origen=datos_recibir.mi_pid;
+		ticket_origen=mensaje.mi_ticket;
+		id_nodo_origen=mensaje.mi_id;
+		pid_origen=mensaje.mi_pid;
 		
 		
 		printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
@@ -130,13 +124,13 @@ int main(int argc,char *argv[]) {
 		
 		if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->dentro==0){
 		
-		
-				ack.id_nodo=buzon;
-				ack.type=pid_origen;
+				mensaje.ack = 1;
+				mensaje.id_nodo=buzon;
+				mensaje.mtype=pid_origen;
 				
-				//SEMAFORO PASO !!!!!!!!!!!!!!!!!!
+				msgsnd(msqid, &mensaje,100, 0);
 				
-				printf("Envio OK a buzon %ld\n",ack.type);
+				printf("Envio OK a buzon %ld\n",mensaje.mtype);
 			
 		}else {
 			 
