@@ -27,16 +27,18 @@ typedef struct datos_comp{
 	//añadidas
 	int dentro;
 	int procesos;
+	int primero;
+	int ultimo;
 }datos_comp;
 
 struct msg{
-	int ack;
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
 	long mtype;
 	int id_nodo;
+	int ack;
 }mensaje;
 
 
@@ -57,6 +59,7 @@ int main(int argc,char *argv[]) {
 	int posicion=atoi(argv[1]);
 	int buzon=1235+posicion;
 	int N = atoi(argv[2]);
+	int ack = 0;
 
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
@@ -88,6 +91,8 @@ int main(int argc,char *argv[]) {
 	
 	datos->dentro=0;
 	datos->procesos=0;
+	datos->primero=0;
+	datos->ultimo=0;
 		
 	//---------------------------------------DECLARACION SEMÁFOROS---------------------
 	char name_mutex[50];
@@ -124,32 +129,41 @@ int main(int argc,char *argv[]) {
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
 		
-		
-		printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
-		
-		sem_wait(sem_mutex);
-		
-		datos->max_ticket = MAX(datos->max_ticket, ticket_origen);//compara su ticket con el ticket del que le llego 
-
-		
-		if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->dentro==0){
-		
-				mensaje.ack = 1;
-				mensaje.id_nodo=buzon;
-				mensaje.mtype=pid_origen;
-				
-				msgsnd(msqid, &mensaje,100, 0);
-				
-				printf("Envio OK a buzon %ld\n",mensaje.mtype);
+		if(mensaje.ack==0){
+			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 			
-		}else {
-			 
-			 datos->id_nodos_pend[datos->num_pend++]= pid_origen;
-			 printf("Numero de pendientes: %d\n",datos->num_pend);
-		
+			sem_wait(sem_mutex);
+			
+			datos->max_ticket = MAX(datos->max_ticket, ticket_origen);//compara su ticket con el ticket del que le llego 
+
+			
+			if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->dentro==0){
+			
+					mensaje.ack = 1;
+					mensaje.id_nodo=buzon;
+					mensaje.mtype=pid_origen;
+					
+					msgsnd(msqid, &mensaje,100, 0);
+					
+					printf("Envio OK a buzon %ld\n",mensaje.mtype);
+				
+			}else {
+				
+				datos->id_nodos_pend[datos->num_pend++]= pid_origen;
+				printf("Numero de pendientes: %d\n",datos->num_pend);
+			
+			}
+			printf("Esperando por mensajes...\n");
+			sem_post(sem_mutex);
+
+		}else{
+			printf("OK recibido de %d", id_nodo_origen);
+			ack++;
+			if(ack==datos->procesos){
+				sem_post(name_mutex_between_main);
+			}
 		}
-		printf("Esperando por mensajes...\n");
-		sem_post(sem_mutex);
+		
 		
 		}
 	

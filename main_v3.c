@@ -27,10 +27,10 @@ typedef struct datos_comp{
 	//añadidas
 	int dentro;
 	int procesos;
+	int primero;
+	int ultimo;
 }datos_comp;
-
-struct msg{
-	int ack;
+	
 struct msg{
 	int mi_ticket;
 	int mi_pid;
@@ -38,12 +38,10 @@ struct msg{
 	char text[100];
 	long mtype;
 	int id_nodo;
+	int ack;
 }mensaje;
 
 
-
-	long type;
-}mensaje;
 
 pid_t getpid(void);
 int main(int argc,char *argv[]) {
@@ -126,6 +124,15 @@ int main(int argc,char *argv[]) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
+
+	char name_paso[50];
+	sprintf(name_paso, "/MUTEXPASO%s", argv[1]);
+	sem_t *sem_name_paso;
+	sem_name_paso = sem_open(name_paso, O_CREAT, 0777, 0);
+	if (sem_name_paso == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
 		
 	//-------------------INICIALIZACIÓN DE LAS VARIABLES COMPARTIDAS--------------------
 	datos->mi_id=id_nodos;
@@ -198,7 +205,15 @@ int main(int argc,char *argv[]) {
 		datos->dentro++;
 		sem_post(sem_mutex3);
 		
-		sem_wait(sem_mutex_between_main);
+		if(datos->primero==0){
+			datos->primero=1;
+			sem_wait(sem_mutex_between_main);
+		}else{
+			sem_wait(name_paso);
+			if(datos->num_pend!=0){
+				sem_wait(sem_mutex_between_main);
+			}
+		}
 		
 		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
 		
@@ -217,9 +232,9 @@ int main(int argc,char *argv[]) {
 		datos->dentro--;
 		sem_post(sem_mutex2);
 		
-		
-		sem_post(sem_mutex_between_main);
-		
+		if(datos->num_pend==0){
+			sem_post(name_paso);
+		}
 		
 		if(datos->dentro==0){
 			for (i = 0; i <datos->num_pend; i++){
