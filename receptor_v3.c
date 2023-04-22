@@ -29,15 +29,15 @@ typedef struct datos_comp{
 	int procesos;
 }datos_comp;
 
-struct recibir{
+struct msg{
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
 	long type;
-}datos_recibir;
+}mensaje;
 
-struct enviar{
+/*struct enviar{
 	int id_aux;
 	long type;
 }datos_enviar;
@@ -45,7 +45,7 @@ struct enviar{
 struct enviar_ack{ 
     long type;
     int id_nodo;
-}ack;
+}ack;*/
 
 
 
@@ -55,14 +55,14 @@ int main(int argc,char *argv[]) {
 	
 	int id_nodo_origen = 0, ticket_origen = 0, pid_origen=0;
 	
-	 if (argc != 2){
-		printf("formato incorrecto: ./v1_receptor posicion \n");
+	 if (argc != 3){
+		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
 		
 	int posicion=atoi(argv[1]);
 	int buzon=1235+posicion;
-	//int N = atoi(argv[2]);
+	int N = atoi(argv[2]);
 
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
@@ -104,6 +104,16 @@ int main(int argc,char *argv[]) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
+
+	char name_mutex_between_main[50];
+	sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv[1]);
+	sem_t *sem_mutex_between_main;
+	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 1);
+	if (sem_mutex_between_main == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+		
 	
 	printf("Mi ID %d\n",buzon);
 	//--------------------------BUCLE DE ACCIONES DEL PROGRAMA-----------------------
@@ -114,11 +124,11 @@ int main(int argc,char *argv[]) {
 	
 		
 		
-		msgrcv(msqid, &datos_recibir, sizeof(datos_recibir.text)+3*sizeof(int),buzon, 0); 
+		msgrcv(msqid, &mensaje, sizeof(mensaje.text)+3*sizeof(int),buzon, 0); 
 		
-		ticket_origen=datos_recibir.mi_ticket;
-		id_nodo_origen=datos_recibir.mi_id;
-		pid_origen=datos_recibir.mi_pid;
+		ticket_origen=mensaje.mi_ticket;
+		id_nodo_origen=mensaje.mi_id;
+		pid_origen=mensaje.mi_pid;
 		
 		
 		printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
@@ -132,10 +142,12 @@ int main(int argc,char *argv[]) {
 		
 		
 				ack.id_nodo=buzon;
-				ack.type=pid_origen;
+				ack.type=id_nodo_origen;
 				
 				//SEMAFORO PASO !!!!!!!!!!!!!!!!!!
-				
+				msgsnd(msqid, &mensaje, sizeof(int), 0);
+				//msgsnd(cola_main, &ack,sizeof(int), 0);
+
 				printf("Envio OK a buzon %ld\n",ack.type);
 			
 		}else {

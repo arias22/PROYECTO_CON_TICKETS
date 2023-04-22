@@ -29,23 +29,13 @@ typedef struct datos_comp{
 	int procesos;
 }datos_comp;
 
-struct enviar{
+struct msg{
 	int mi_ticket;
 	int mi_pid;
 	int mi_id;
 	char text[100];
 	long type;
-}datos_enviar;
-
-struct recibir{
-	long type;
-	int id_nodo;
-}datos_recibir;
-
-struct enviar_ack{ 
-    long type;
-    int mi_pid;
-}ack;
+}mensaje;
 
 pid_t getpid(void);
 int main(int argc,char *argv[]) {
