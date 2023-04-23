@@ -78,6 +78,7 @@ sigaction(2,&ss,NULL);
 	int N = atoi(argv[2]);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
+	int anteriores;
 
 	char* cadena="Quiero entrar en la SC";
 	strcpy(mensaje.text,cadena);
@@ -230,6 +231,8 @@ sigaction(2,&ss,NULL);
 			}else{
 			datos->ultimo=getpid();
 			datos->contador_paso_2++;
+			anteriores=datos->estado_anterior;
+			printf("anteriores:%d",anteriores);
 			printf("Me marco como ultimo\n");
 			printf("Entro semáforo paso 2\n");
 			sem_wait(sem_name_paso);
@@ -246,7 +249,7 @@ sigaction(2,&ss,NULL);
 		if(datos->ultimo==getpid()){
 			datos->ultimo=0;
 			
-			for (i = 0; i <datos->num_pend; i++){
+			for (i = 0; i <anteriores; i++){
 				mensaje.ack = 1;
 				mensaje.mi_pid=getpid();
 				mensaje.mtype=datos->id_nodos_pend[i];
@@ -256,7 +259,7 @@ sigaction(2,&ss,NULL);
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
 			}
 		
-			datos->num_pend = 0; 
+			//datos->num_pend = 0; 
 			
 			printf("Todos los OK pendientes enviados\n");
 			
@@ -286,7 +289,6 @@ sigaction(2,&ss,NULL);
 		datos->dentro--;
 		sem_post(sem_mutex2);
 
-		//sleep(1);
 		printf("Contador cola 1 %d, contador cola 2 %d\n",datos->contador_paso_1,datos->contador_paso_2);
 		if(datos->contador_paso_1==0 & datos->contador_paso_2==0){
 			datos->primero=0;
@@ -298,7 +300,7 @@ sigaction(2,&ss,NULL);
 			if(datos->ultimo==getpid() || datos->contador_paso_1==0 & datos->contador_paso_2==0){
 			datos->ultimo=0;
 			
-			for (i = 0; i <datos->num_pend; i++){
+			for (i = anteriores; i <=datos->num_pend-anteriores; i++){
 				mensaje.ack = 1;
 				mensaje.mi_pid=getpid();
 				mensaje.mtype=datos->id_nodos_pend[i];

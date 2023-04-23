@@ -209,8 +209,6 @@ sigaction(2,&ss,NULL);
 
 		
 		msgrcv(msqid, &mensaje,sizeof(struct msg),buzon, 0); 
-		printf("RECOJO MENSAJE\n");
-
 
 
 		ticket_origen=mensaje.mi_ticket;
@@ -247,8 +245,7 @@ sigaction(2,&ss,NULL);
 		}else if(mensaje.ack==1){
 			printf("OK recibido de %d\n", mensaje.id_nodo);
 			ack++;
-			printf("valor ack %d\n", ack);
-			printf("valor contador paso1 %d", datos->contador_paso_1);
+		
 			if(ack==(N-1)){
 				printf("Concediendo acceso a SC\n");
 				sem_post(sem_mutex_between_main);
