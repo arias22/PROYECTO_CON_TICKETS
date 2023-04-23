@@ -34,6 +34,7 @@ typedef struct datos_comp{
 	int contador_paso_1;
 	int contador_paso_2;
 	int estado_anterior;
+	int id_pid_pend[100];
 }datos_comp;
 
 struct msg{
@@ -44,6 +45,7 @@ struct msg{
 	char text[100];
 	int id_nodo;
 	int ack;
+	int posicion_main;
 }mensaje;
 
 struct msgbuf {
@@ -118,7 +120,7 @@ sigaction(2,&ss,NULL);
 	int buzon=1235+posicion;
 	posicionv = posicion;
 	int N = atoi(argv[2]);
-	int ack = 0;
+	int ack_procesos[255]={};
 
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
@@ -230,14 +232,16 @@ sigaction(2,&ss,NULL);
 					mensaje.ack = 1;
 					mensaje.id_nodo=buzon;
 					mensaje.mtype=id_nodo_origen;
-					
+
 					msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
-					
+				
 					printf("Envio OK a buzon %ld\n",mensaje.mtype);
 				
 			}else {
 				
-				datos->id_nodos_pend[datos->num_pend++]= id_nodo_origen;
+				datos->id_nodos_pend[datos->num_pend]= id_nodo_origen;
+				datos->id_pid_pend[datos->num_pend]= mensaje.posicion_main;
+				datos->num_pend++;
 				printf("Numero de pendientes: %d\n",datos->num_pend);
 			
 			}
@@ -246,12 +250,16 @@ sigaction(2,&ss,NULL);
 
 		}else if(mensaje.ack==1){
 			printf("OK recibido de %d\n", mensaje.id_nodo);
-			ack++;
-		
-			if(ack==(N-1)){
-				printf("Concediendo acceso a SC\n");
-				sem_post(sem_mutex_between_main);
-				ack=0;
+			printf("PID destinatario %d\n",mensaje.mi_pid);
+
+			ack_procesos[mensaje.posicion_main]=ack_procesos[mensaje.posicion_main]+1;
+			printf("ack_procesos[%d]: %d\n",mensaje.posicion_main,ack_procesos[mensaje.posicion_main]);
+			for(int i=0;i<datos->procesos;i++){
+					if(ack_procesos[i]==N-1){
+						printf("Concediendo acceso a SC\n");
+						sem_post(sem_mutex_between_main);
+						ack_procesos[mensaje.posicion_main]=0;
+					}
 			}
 		}
 		

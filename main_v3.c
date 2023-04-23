@@ -29,6 +29,7 @@ typedef struct datos_comp{
 	int contador_paso_1;
 	int contador_paso_2;
 	int estado_anterior;
+	int id_pid_pend[100];
 }datos_comp;
 	
 struct msg{
@@ -39,6 +40,7 @@ struct msg{
 	char text[100];
 	int id_nodo;
 	int ack;
+	int posicion_main;
 }mensaje;
 struct msgbuf {
     long mtype;
@@ -68,7 +70,8 @@ sigaction(2,&ss,NULL);
 	int i=0;
 	int posicion=atoi(argv[1]);
 	posicionv = posicion;
-	int N = atoi(argv[2]);
+	int N = atoi(argv[3]);
+	int proceso=atoi(argv[2]);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
 	int anteriores;
@@ -76,8 +79,8 @@ sigaction(2,&ss,NULL);
 	char* cadena="Quiero entrar en la SC";
 	strcpy(mensaje.text,cadena);
 	
-	 if (argc != 3){
-		printf("formato incorrecto: ./v1_main posicion N\n");
+	 if (argc != 4){
+		printf("formato incorrecto: ./v1_main posicion  proceso N\n");
 		exit(-1);
 	}
 
@@ -189,7 +192,8 @@ sigaction(2,&ss,NULL);
 		mensaje.mi_ticket=datos->mi_ticket;
 		mensaje.mi_pid=getpid();
 		mensaje.mi_id=id_nodos;
-
+		mensaje.posicion_main=proceso;
+		printf("posicion_main:%d\n",mensaje.posicion_main);
 		
 
 		if(datos->primero==0 || datos->num_pend!=datos->estado_anterior){
@@ -203,12 +207,13 @@ sigaction(2,&ss,NULL);
 				
 					mensaje.ack = 0;
 					mensaje.mtype=1235+i;
-
+					mensaje.mi_pid=getpid();
 					mensaje.mtype = 1235+i;
 
 					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
 					
 					printf("Mensaje enviado a %ld\n",mensaje.mtype);
+				
 				}
 			}
 
@@ -244,9 +249,9 @@ sigaction(2,&ss,NULL);
 			
 			for (i = 0; i <anteriores; i++){
 				mensaje.ack = 1;
-				mensaje.mi_pid=getpid();
 				mensaje.mtype=datos->id_nodos_pend[i];
-					
+				mensaje.posicion_main=datos->id_pid_pend[i];
+			
 				msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
@@ -295,9 +300,8 @@ sigaction(2,&ss,NULL);
 			
 			for (i = anteriores; i <=datos->num_pend-anteriores; i++){
 				mensaje.ack = 1;
-				mensaje.mi_pid=getpid();
 				mensaje.mtype=datos->id_nodos_pend[i];
-					
+				mensaje.posicion_main=datos->id_pid_pend[i];
 				msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
 				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
