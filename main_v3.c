@@ -37,6 +37,7 @@ typedef struct datos_comp{
 	int estado_anterior;
 	int id_pid_pend[100];
 	int cont_prioridades[4];
+	int prioridad_procesos[100];
 }datos_comp;
 	
 struct msg{
@@ -49,7 +50,10 @@ struct msg{
 	int ack;
 	int posicion_main;
 	int prioridad;
+	int cancelar;
 }mensaje;
+
+
 
 
 
@@ -80,9 +84,8 @@ sigaction(2,&ss,NULL);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
 	int anteriores;
-
-	char* cadena="Quiero entrar en la SC";
-	strcpy(mensaje.text,cadena);
+	int mayor=0;
+	int contadores = 0;
 	
 	 if (argc != 5){
 		printf("formato incorrecto: ./v1_main posicion  proceso N prioridad\n");
@@ -95,7 +98,6 @@ sigaction(2,&ss,NULL);
 	int shmid1; //identificador de la zona de memoria 1
 		//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
 	int msqid = msgget(500,0666 | IPC_CREAT);
-	struct msgbuf msgs;
 
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 	//-------------INICIALIZAMOS ZONA DE MEMORIA COMPARTIDA--------------
@@ -174,7 +176,7 @@ sigaction(2,&ss,NULL);
 	sprintf(name_paso_administracion, "/MUTEXPASOADMINISTRACION%s", argv[1]);
 	sem_t *sem_name_paso_administracion;
 	sem_name_paso_administracion = sem_open(name_paso_administracion, O_CREAT, 0777, 0);
-	if (sem_name_paso == SEM_FAILED) {
+	if (sem_name_paso_administracion == SEM_FAILED) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
@@ -183,7 +185,7 @@ sigaction(2,&ss,NULL);
 	sprintf(name_paso_reservas, "/MUTEXPASO%s", argv[1]);
 	sem_t *sem_name_paso_reservas;
 	sem_name_paso_reservas = sem_open(name_paso_reservas, O_CREAT, 0777, 0);
-	if (sem_name_paso == SEM_FAILED) {
+	if (sem_name_paso_reservas == SEM_FAILED) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
@@ -192,7 +194,7 @@ sigaction(2,&ss,NULL);
 	sprintf(name_paso_pagos_anulaciones, "/MUTEXPASOPAGOSANULACIONES%s", argv[1]);
 	sem_t *sem_name_paso_pagos_anulaciones;
 	sem_name_paso_pagos_anulaciones = sem_open(name_paso_pagos_anulaciones, O_CREAT, 0777, 0);
-	if (sem_name_paso == SEM_FAILED) {
+	if (sem_name_paso_pagos_anulaciones == SEM_FAILED) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
@@ -208,6 +210,7 @@ sigaction(2,&ss,NULL);
 	datos->max_ticket=0;
 	datos->procesos++;
 	mensaje.ack=0;
+	mensaje.prioridad=prioridad;
 
 	mensaje.mi_ticket=0;
 	
@@ -226,7 +229,7 @@ sigaction(2,&ss,NULL);
 
 	 	sem_wait(sem_mutex);
 		datos->quiero = 1;
-		//datos->dentro++; 
+		datos->dentro++;
 		datos->mi_ticket = datos->max_ticket + 1; // generas un ticket mayor que el ultimo 
 		sem_post(sem_mutex);
 		
@@ -234,82 +237,109 @@ sigaction(2,&ss,NULL);
 		mensaje.mi_pid=getpid();
 		mensaje.mi_id=id_nodos;
 		mensaje.posicion_main=proceso;
-		printf("posicion_main:%d\n",mensaje.posicion_main);
+		//printf("posicion_main:%d\n",mensaje.posicion_main);
 		
+		
+				if(datos->cont_prioridades[pagos_anulaciones]!=0){
+					if(prioridad>=pagos_anulaciones){
+						mayor=1;
+						
+					}
+				}
+				if(datos->cont_prioridades[reservas]!=0){
+					if(prioridad>=reservas){
+						mayor=1;
+						
+					}
+				}
+				if(datos->cont_prioridades[administracion]!=0){
+					if(prioridad>=administracion){
+						mayor=1;
+					
+					}
+				}
+				if(datos->cont_prioridades[consultas]!=0){
+					if(prioridad>=consultas){
+						mayor=1;
+					
+					}
+				}
 
-		if(datos->primero==0 || datos->num_pend!=datos->estado_anterior){
+		if(datos->primero==0 || mayor==1){
 
-				//ENVIA REQUEST
+				//ENVIA CANCELACION
+			if(datos->primero!=0){
+				for (i = 0; i <=N-1; i++){
+				if(1235+i!=id_nodos){
+				
+					mensaje.ack = 0;
+					mensaje.cancelar = 1;
+					mensaje.mtype=1235+i;
+					mensaje.mi_pid=getpid();
 
-			
+					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+					
+					printf("[CANCELACIÓN] enviado a %ld\n",mensaje.mtype);
+				
+				}
+			}
 	
+			}
+			//ENVIA REQUEST
 			for (i = 0; i <=N-1; i++){
 				if(1235+i!=id_nodos){
 				
 					mensaje.ack = 0;
+					mensaje.cancelar=0;
 					mensaje.mtype=1235+i;
+					mensaje.mi_id=id_nodos;
+					mensaje.prioridad=prioridad;
+					mensaje.posicion_main=proceso;
 					mensaje.mi_pid=getpid();
-					mensaje.mtype = 1235+i;
+					
 
 					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
 					
-					printf("Mensaje enviado a %ld\n",mensaje.mtype);
+					printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
 				
 				}
 			}
-
-			datos->estado_anterior=datos->num_pend;
-			printf("Numero estado pendientes: %d\n",datos->estado_anterior);
-
-			if(datos->primero==0){
 			datos->primero=1;
-			datos->contador_paso_1++;
-			printf("Entro semáforo paso 1\n");
-			sem_wait(sem_mutex_between_main);
-			datos->contador_paso_1--;
-			}else{
-			datos->ultimo=getpid();
-			datos->contador_paso_2++;
-			anteriores=datos->estado_anterior;
-			printf("anteriores:%d",anteriores);
-			printf("Me marco como ultimo\n");
-			printf("Entro semáforo paso 2\n");
-			sem_wait(sem_name_paso);
-			datos->contador_paso_2--;
-			}
 
+		}
+
+		if(prioridad==pagos_anulaciones){
+			printf("Semaforo pagos y anulaciones\n");
+			datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] + 1 ;
+			mayor=0;
+			printf("VALOR CONTADOR %d\n",datos->cont_prioridades[pagos_anulaciones]);
+			sem_wait(sem_name_paso_pagos_anulaciones);
+			printf("AQUI\n");
+			datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] -1 ;
+			printf("VALOR CONTADOR %d\n",datos->cont_prioridades[pagos_anulaciones]);
+		}else if(prioridad==reservas){
+			printf("Semaforo reservas\n");
+			datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] + 1 ;
+			mayor=0;
+			sem_wait(sem_name_paso_reservas);
+			printf("AQUI\n");
+			datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] - 1 ;
+		}else if(prioridad==administracion){
+			printf("Semaforo administración\n");
+			datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] + 1 ;
+			mayor=0;
+			sem_wait(sem_name_paso_administracion);
+			printf("AQUI\n");
+			datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] - 1 ;
 		}else{
-			datos->contador_paso_2++;
-			printf("Entro semáforo paso 2\n");
-			sem_wait(sem_name_paso);
-			datos->contador_paso_2--;
+			printf("Semaforo consultas\n");
+			datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;
+			mayor=0;
+			sem_wait(sem_name_paso_consulta);
+			printf("AQUI\n");
+			datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;
 		}
-		
-		if(datos->ultimo==getpid()){
-			datos->ultimo=0;
-			
-			for (i = 0; i <anteriores; i++){
-				mensaje.ack = 1;
-				mensaje.mtype=datos->id_nodos_pend[i];
-				mensaje.posicion_main=datos->id_pid_pend[i];
-			
-				msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
-				
-				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
-			}
-		
-			//datos->num_pend = 0; 
-			
-			printf("Todos los OK pendientes enviados\n");
-			
 
-			sem_wait(sem_mutex_between_main);
-
-		}
-		
-		sem_wait(sem_mutex3);
-		datos->dentro++;
-		sem_post(sem_mutex3);
 		
 		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
 		
@@ -328,41 +358,133 @@ sigaction(2,&ss,NULL);
 		datos->dentro--;
 		sem_post(sem_mutex2);
 
-		printf("Contador cola 1 %d, contador cola 2 %d\n",datos->contador_paso_1,datos->contador_paso_2);
-		if(datos->contador_paso_1==0 & datos->contador_paso_2==0){
-			datos->primero=0;
+		for (i = 0; i <datos->num_pend; i++){
+				datos->prioridad_procesos[i];
+				if(prioridad<datos->prioridad_procesos[i]){
+					mayor=1;
+					break;
+				}
 		}
 
-		if(datos->contador_paso_2!=0){
-			sem_post(sem_name_paso);
+		for (int i = 0; i < 4; i++){
+			if(datos->cont_prioridades[i]==0)  contadores++;			
 		}
-			if(datos->ultimo==getpid() || datos->contador_paso_1==0 & datos->contador_paso_2==0){
-			datos->ultimo=0;
-			
-			for (i = anteriores; i <=datos->num_pend-anteriores; i++){
+		
+		if(mayor==1 || contadores==4 ){
+				
+			for (i = 0; i <datos->num_pend; i++){
 				mensaje.ack = 1;
 				mensaje.mtype=datos->id_nodos_pend[i];
 				mensaje.posicion_main=datos->id_pid_pend[i];
-				msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
+				if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
-				printf("Enviando OK pendiente a %d \n",datos->id_nodos_pend[i]);
+				printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
 			}
-		
-			datos->num_pend = 0; 
-			
-			printf("Todos los OK pendientes enviados\n");
+				datos->num_pend = 0; 
+				mayor=0;	
+				contadores = 0;
+				printf("Todos los OK pendientes enviados\n");
 			
 
-			//sem_wait(sem_mutex_between_main);
+				if(datos->cont_prioridades[pagos_anulaciones]!=0){
+					for (i = 0; i <=N-1; i++){
+							if(1235+i!=id_nodos){
+							
+								mensaje.ack = 0;
+								mensaje.cancelar = 0;
+								mensaje.mtype=1235+i;
+								mensaje.mi_pid=getpid();
+								mensaje.prioridad=prioridad;
+								mensaje.mtype = 1235+i;
+
+								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+								
+								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+					
+							}
+					}
+	
+				}else if(datos->cont_prioridades[reservas]!=0){
+					for (i = 0; i <=N-1; i++){
+							if(1235+i!=id_nodos){
+							
+								mensaje.ack = 0;
+								mensaje.cancelar = 0;
+								mensaje.mtype=1235+i;
+								mensaje.mi_pid=getpid();
+								mensaje.prioridad=prioridad;
+								mensaje.mtype = 1235+i;
+
+								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+								
+								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+					
+							}
+					}
+	
+				}else if (datos->cont_prioridades[administracion]!=0){
+					for (i = 0; i <=N-1; i++){
+							if(1235+i!=id_nodos){
+							
+								mensaje.ack = 0;
+								mensaje.cancelar = 0;
+								mensaje.mtype=1235+i;
+								mensaje.mi_pid=getpid();
+								mensaje.mtype = 1235+i;
+								mensaje.prioridad=prioridad;
+
+								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+								
+								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+					
+							}
+					}
+	
+				}else if(datos->cont_prioridades[consultas]!=0){
+					for (i = 0; i <=N-1; i++){
+							if(1235+i!=id_nodos){
+							
+								mensaje.ack = 0;
+								mensaje.cancelar = 0;
+								mensaje.mtype=1235+i;
+								mensaje.mi_pid=getpid();
+								mensaje.mtype = 1235+i;
+								mensaje.prioridad=prioridad;
+
+								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+								
+								printf("[[REQUEST] ]enviado a %ld\n",mensaje.mtype);
+					
+							}
+					}
+	
+				}
+		}else{
+			if(datos->cont_prioridades[pagos_anulaciones]!=0){
+						sem_post(sem_name_paso_pagos_anulaciones);
+			}else if(datos->cont_prioridades[reservas]!=0){
+						sem_post(sem_name_paso_reservas);
+			}else if(datos->cont_prioridades[administracion]!=0){
+						sem_post(sem_name_paso_administracion);
+			}else if (datos->cont_prioridades[consultas]!=0){
+						sem_post(sem_name_paso_consulta);
+			}
 
 		}
 		
+	
+		for (int i = 0; i < 4; i++){
+			if(datos->cont_prioridades[i]==0)  contadores++;
+		}
+		if(contadores==4){
+	
+			datos->primero=0;
+			contadores = 0;
+		}
 		
 		printf("Fuera de la Sección Critica\n");		
 		
-	
-	 
-}
+	}	
 }
 
 
