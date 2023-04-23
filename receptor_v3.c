@@ -17,6 +17,10 @@
 int posicionv;
 #define MAX(i,j) (((i)>(j)) ? (i) : (j))
 #define SIZE 50
+#define pagos_anulaciones 0
+#define reservas 1
+#define administracion 2
+#define consultas 3
 
 // --------- VARIABLES COMPARTIDAS----------
 typedef struct datos_comp{
@@ -35,6 +39,7 @@ typedef struct datos_comp{
 	int contador_paso_2;
 	int estado_anterior;
 	int id_pid_pend[100];
+	int cont_prioridades[4];
 }datos_comp;
 
 struct msg{
@@ -46,12 +51,9 @@ struct msg{
 	int id_nodo;
 	int ack;
 	int posicion_main;
+	int prioridad;
 }mensaje;
 
-struct msgbuf {
-    long mtype;
-    char mtext[SIZE];
-};
 
 
 int msqid2_glob;

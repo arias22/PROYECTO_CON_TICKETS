@@ -11,8 +11,14 @@
 #include <fcntl.h>
 #include <math.h>
 #include <signal.h>
+
 int posicionv;
 #define SIZE 50
+#define pagos_anulaciones 0
+#define reservas 1
+#define administracion 2
+#define consultas 3
+
 // -------------VARIABLES COMPARTIDAS--------------
 typedef struct datos_comp{
 	int mi_ticket;
@@ -30,6 +36,7 @@ typedef struct datos_comp{
 	int contador_paso_2;
 	int estado_anterior;
 	int id_pid_pend[100];
+	int cont_prioridades[4];
 }datos_comp;
 	
 struct msg{
@@ -41,11 +48,8 @@ struct msg{
 	int id_nodo;
 	int ack;
 	int posicion_main;
+	int prioridad;
 }mensaje;
-struct msgbuf {
-    long mtype;
-    char mtext[SIZE];
-};
 
 
 
@@ -72,6 +76,7 @@ sigaction(2,&ss,NULL);
 	posicionv = posicion;
 	int N = atoi(argv[3]);
 	int proceso=atoi(argv[2]);
+	int prioridad=atoi(argv[4]);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
 	int anteriores;
@@ -79,8 +84,8 @@ sigaction(2,&ss,NULL);
 	char* cadena="Quiero entrar en la SC";
 	strcpy(mensaje.text,cadena);
 	
-	 if (argc != 4){
-		printf("formato incorrecto: ./v1_main posicion  proceso N\n");
+	 if (argc != 5){
+		printf("formato incorrecto: ./v1_main posicion  proceso N prioridad\n");
 		exit(-1);
 	}
 
