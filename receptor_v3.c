@@ -41,6 +41,7 @@ typedef struct datos_comp{
 	int id_pid_pend[100];
 	int cont_prioridades[4];
 	int prioridad_procesos[100];
+	int ack;
 }datos_comp;
 
 struct msg{
@@ -310,8 +311,10 @@ sigaction(2,&ss,NULL);
 		}else if(mensaje.ack==1 & mensaje.cancelar==0){
 			printf("OK recibido de %d\n", mensaje.id_nodo);
 			printf("PID destinatario %d\n",mensaje.mi_pid);
-			ack++;
-					if(ack==N-1){
+			printf("ack %d\n",datos->ack);
+			datos->ack++;
+			printf("ack 2%d\n",datos->ack);
+					if(datos->ack==N-1){
 						if(datos->cont_prioridades[pagos_anulaciones]!=0){
 									printf("[PAGOS / ANULACIONES] Concediendo acceso a SC\n");
 									sem_post(sem_name_paso_pagos_anulaciones);
@@ -329,25 +332,31 @@ sigaction(2,&ss,NULL);
 									sem_post(sem_name_paso_consulta);
 									
 						}
-						ack=0;
+						datos->ack=0;
 						printf("Esperando por mensajes...\n");
 
 					}
 			
 	
 		}else if(mensaje.cancelar==1){
-			
-				if(max_prioridad<mensaje.prioridad){
+				printf("id nodo a eliminar %d\n",mensaje.mi_id);
+				
 					for(int i=0;i<datos->num_pend;i++){
 						if(datos->id_nodos_pend[i]==mensaje.mi_id)
-						{datos->id_nodos_pend[i]=0;
-						break;
+						{
+							datos->id_nodos_pend[i]=0;
+							break;
 						}
 					}
-					ack=0;
+					
+					for(int i=0;i<datos->num_pend;i++){
+						
+						printf(" nodos pendientes %d\n",datos->id_nodos_pend[i]);
+					}
+						
 					printf("Esperando por mensajes...\n");
 
-				}
+				
 		}
 		
 		}

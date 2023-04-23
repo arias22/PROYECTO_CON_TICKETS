@@ -38,6 +38,7 @@ typedef struct datos_comp{
 	int id_pid_pend[100];
 	int cont_prioridades[4];
 	int prioridad_procesos[100];
+	int ack;
 }datos_comp;
 	
 struct msg{
@@ -237,51 +238,41 @@ sigaction(2,&ss,NULL);
 		mensaje.mi_id=id_nodos;
 		
 		
-				if(datos->cont_prioridades[pagos_anulaciones]!=0){
-					if(prioridad>=pagos_anulaciones){
-						mayor=1;
-						
-					}
-				}
-				if(datos->cont_prioridades[reservas]!=0){
-					if(prioridad>=reservas){
-						mayor=1;
-						
-					}
-				}
-				if(datos->cont_prioridades[administracion]!=0){
-					if(prioridad>=administracion){
-						mayor=1;
-					
-					}
-				}
-				if(datos->cont_prioridades[consultas]!=0){
-					if(prioridad>=consultas){
-						mayor=1;
-					
-					}
-				}
+		if(datos->cont_prioridades[pagos_anulaciones]!=0){
+						max_prioridad=pagos_anulaciones;
+			}else if(datos->cont_prioridades[reservas]!=0){
+						max_prioridad=reservas;
+			}else if(datos->cont_prioridades[administracion]!=0){
+						max_prioridad=administracion;
+			}else if (datos->cont_prioridades[consultas]!=0){
+						max_prioridad=consultas;
+		}
 
-		if(datos->primero==0 || mayor==1){
+		if (max_prioridad>prioridad){
+				max_prioridad=1;
+		} else max_prioridad=0;
+
+		if(datos->primero==0 || max_prioridad==1){
 
 				//ENVIA CANCELACION
-			if(datos->primero!=0){
+			if(datos->primero!=0  && max_prioridad==1){
 				for (i = 0; i <=N-1; i++){
-				if(1235+i!=id_nodos){
-				
-					mensaje.ack = 0;
-					mensaje.cancelar = 1;
-					mensaje.mtype=1235+i;
-					mensaje.mi_pid=getpid();
-
-					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+					if(1235+i!=id_nodos){
 					
-					printf("[CANCELACIÓN] enviado a %ld\n",mensaje.mtype);
-				
+						mensaje.ack = 0;
+						mensaje.cancelar = 1;
+						mensaje.mtype=1235+i;
+						mensaje.mi_pid=getpid();
+
+						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+						
+						printf("[CANCELACIÓN] enviado a %ld\n",mensaje.mtype);
+					
+					}
 				}
+				datos->ack=0;
 			}
-	
-			}
+
 			//ENVIA REQUEST
 			for (i = 0; i <=N-1; i++){
 				if(1235+i!=id_nodos){
@@ -301,42 +292,110 @@ sigaction(2,&ss,NULL);
 				}
 			}
 			datos->primero=1;
-
+			mayor=0;
 		}
+		while(1){
 
-		if(prioridad==pagos_anulaciones){
-			printf("Semaforo pagos y anulaciones\n");
-			datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] + 1 ;
-			mayor=0;
-			printf("VALOR CONTADOR %d\n",datos->cont_prioridades[pagos_anulaciones]);
-			sem_wait(sem_name_paso_pagos_anulaciones);
-			printf("AQUI\n");
-			datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] -1 ;
-			printf("VALOR CONTADOR %d\n",datos->cont_prioridades[pagos_anulaciones]);
-		}else if(prioridad==reservas){
-			printf("Semaforo reservas\n");
-			datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] + 1 ;
-			mayor=0;
-			sem_wait(sem_name_paso_reservas);
-			printf("AQUI\n");
-			datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] - 1 ;
-		}else if(prioridad==administracion){
-			printf("Semaforo administración\n");
-			datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] + 1 ;
-			mayor=0;
-			sem_wait(sem_name_paso_administracion);
-			printf("AQUI\n");
-			datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] - 1 ;
-		}else{
-			printf("Semaforo consultas\n");
-			datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;
-			mayor=0;
-			sem_wait(sem_name_paso_consulta);
-			printf("AQUI\n");
-			datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;
+			if(prioridad==pagos_anulaciones){
+				printf("Semaforo pagos y anulaciones\n");
+				datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] + 1 ;
+				mayor=0;
+				printf("VALOR CONTADOR %d\n",datos->cont_prioridades[pagos_anulaciones]);
+				sem_wait(sem_name_paso_pagos_anulaciones);
+				printf("AQUI\n");
+				datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] -1 ;
+				printf("VALOR CONTADOR %d\n",datos->cont_prioridades[pagos_anulaciones]);
+			}else if(prioridad==reservas){
+				printf("Semaforo reservas\n");
+				datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] + 1 ;
+				mayor=0;
+				sem_wait(sem_name_paso_reservas);
+				printf("AQUI\n");
+				datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] - 1 ;
+			}else if(prioridad==administracion){
+				printf("Semaforo administración\n");
+				datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] + 1 ;
+				mayor=0;
+				sem_wait(sem_name_paso_administracion);
+				printf("AQUI\n");
+				datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] - 1 ;
+			}else{
+				printf("Semaforo consultas\n");
+				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;
+				mayor=0;
+				sem_wait(sem_name_paso_consulta);
+				printf("AQUI\n");
+				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;
+			}
+
+			if(datos->cont_prioridades[pagos_anulaciones]!=0){
+							max_prioridad=pagos_anulaciones;
+				}else if(datos->cont_prioridades[reservas]!=0){
+							max_prioridad=reservas;
+				}else if(datos->cont_prioridades[administracion]!=0){
+							max_prioridad=administracion;
+				}else if (datos->cont_prioridades[consultas]!=0){
+							max_prioridad=consultas;
+			}
+			
+			for (i = 0; i <datos->num_pend; i++){
+					datos->prioridad_procesos[i];
+					if(datos->prioridad_procesos[i]<prioridad){
+						mayor=1;
+						break;
+					}
+			}
+
+			if(mayor==1){
+					
+				for (i = 0; i <datos->num_pend; i++){
+					mensaje.ack = 1;
+					mensaje.mtype=datos->id_nodos_pend[i];
+					if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
+					
+					printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
+				}
+				datos->num_pend = 0; 
+				mayor=0;	
+				contadores = 0;
+				printf("Todos los OK pendientes enviados\n");
+
+			
+				for (i = 0; i <=N-1; i++){
+					if(1235+i!=id_nodos){
+						
+						mensaje.ack = 0;
+						mensaje.cancelar = 1;
+						mensaje.mtype=1235+i;
+						mensaje.mi_pid=getpid();
+
+						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+							
+						printf("[CANCELACIÓN] enviado a %ld\n",mensaje.mtype);
+						
+						}
+				}
+				
+
+				for (i = 0; i <=N-1; i++){
+					if(1235+i!=id_nodos){
+						
+						mensaje.ack = 0;
+						mensaje.cancelar=0;
+						mensaje.mtype=1235+i;
+						mensaje.mi_id=id_nodos;
+						mensaje.prioridad=prioridad;
+						mensaje.mi_pid=getpid();
+							
+
+						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
+							
+						printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+						
+						}
+				}
+			}else{break;}	
 		}
-
-		
 		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
 		
 		
@@ -489,7 +548,8 @@ sigaction(2,&ss,NULL);
 		
 		printf("Fuera de la Sección Critica\n");		
 		
-	}	
+	}
+	
 }
 
 
