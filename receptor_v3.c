@@ -53,10 +53,9 @@ struct msgbuf {
 
 
 int msqid2_glob;
-int argv_nodo;
 void handle_sigint(int signal) {
 
-
+printf("posicion al borrar es = %d\n",posicionv);
 key_t clave1 = ftok(".",posicionv);
 //BORRAR MEMORIA COMPARTIDA
  int shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);
@@ -72,26 +71,27 @@ if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
 //BORRAR SEMÁFOROS
 
 char name_mutex[50];
-sprintf(name_mutex, "/MUTEX%d", argv_nodo);;  
-if(sem_unlink(name_mutex)==-1) printf("NO SE DESTRUYO BIEN MUTEX\n");
+sprintf(name_mutex, "/MUTEX%d", posicionv);
+printf("%s",name_mutex);
+if(sem_unlink(name_mutex)==-1) perror("Name_mutex");//printf("NO SE DESTRUYO BIEN MUTEX\n");
 
 
 char name_mutex_between_main[50];
-sprintf(name_mutex_between_main, "/MUTEXMAIN%d", argv_nodo);
+sprintf(name_mutex_between_main, "/MUTEXMAIN%d", posicionv);
 if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
 
 
 char name_mutex2[50];
-sprintf(name_mutex2, "/MUTEX1%d",argv_nodo);
+sprintf(name_mutex2, "/MUTEX1%d",posicionv);
 if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
 
 
 char name_mutex3[50];
-sprintf(name_mutex3, "/MUTEX2%d", argv_nodo);
+sprintf(name_mutex3, "/MUTEX2%d", posicionv);
 if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 
 char name_paso[50];
-sprintf(name_paso, "/MUTEXPASO%d", argv_nodo);
+sprintf(name_paso, "/MUTEXPASO%d", posicionv);
 if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
 
     exit(0);
@@ -111,9 +111,10 @@ sigaction(2,&ss,NULL);
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
-	argv_nodo = atoi(argv[1]);
+
+
+
 	int posicion=atoi(argv[1]);
-	
 	int buzon=1235+posicion;
 	posicionv = posicion;
 	int N = atoi(argv[2]);
@@ -158,6 +159,7 @@ sigaction(2,&ss,NULL);
 	//---------------------------------------DECLARACION SEMÁFOROS---------------------
 	char name_mutex[50];
 	sprintf(name_mutex, "/MUTEX%s", argv[1]);
+	
 	sem_t *sem_mutex;
 	sem_mutex = sem_open(name_mutex, O_CREAT, 0777, 1);
 	if (sem_mutex == SEM_FAILED) {
