@@ -48,7 +48,6 @@ struct msg{
 	char text[100];
 	int id_nodo;
 	int ack;
-	int posicion_main;
 	int prioridad;
 	int cancelar;
 }mensaje;
@@ -78,17 +77,17 @@ sigaction(2,&ss,NULL);
 	int i=0;
 	int posicion=atoi(argv[1]);
 	posicionv = posicion;
-	int N = atoi(argv[3]);
-	int proceso=atoi(argv[2]);
-	int prioridad=atoi(argv[4]);
+	int N = atoi(argv[2]);
+	int prioridad=atoi(argv[3]);
 	int id_nodos=1235+posicion;
 	int buzon=getpid();
 	int anteriores;
 	int mayor=0;
 	int contadores = 0;
+	int max_prioridad=0;
 	
-	 if (argc != 5){
-		printf("formato incorrecto: ./v1_main posicion  proceso N prioridad\n");
+	 if (argc != 4){
+		printf("formato incorrecto: ./v1_main posicion N prioridad\n");
 		exit(-1);
 	}
 
@@ -182,7 +181,7 @@ sigaction(2,&ss,NULL);
 	}
 
 		char name_paso_reservas[50];
-	sprintf(name_paso_reservas, "/MUTEXPASO%s", argv[1]);
+	sprintf(name_paso_reservas, "/MUTEXPASORESERVAS%s", argv[1]);
 	sem_t *sem_name_paso_reservas;
 	sem_name_paso_reservas = sem_open(name_paso_reservas, O_CREAT, 0777, 0);
 	if (sem_name_paso_reservas == SEM_FAILED) {
@@ -236,8 +235,6 @@ sigaction(2,&ss,NULL);
 		mensaje.mi_ticket=datos->mi_ticket;
 		mensaje.mi_pid=getpid();
 		mensaje.mi_id=id_nodos;
-		mensaje.posicion_main=proceso;
-		//printf("posicion_main:%d\n",mensaje.posicion_main);
 		
 		
 				if(datos->cont_prioridades[pagos_anulaciones]!=0){
@@ -294,7 +291,6 @@ sigaction(2,&ss,NULL);
 					mensaje.mtype=1235+i;
 					mensaje.mi_id=id_nodos;
 					mensaje.prioridad=prioridad;
-					mensaje.posicion_main=proceso;
 					mensaje.mi_pid=getpid();
 					
 
@@ -358,9 +354,19 @@ sigaction(2,&ss,NULL);
 		datos->dentro--;
 		sem_post(sem_mutex2);
 
+		if(datos->cont_prioridades[pagos_anulaciones]!=0){
+						max_prioridad=pagos_anulaciones;
+			}else if(datos->cont_prioridades[reservas]!=0){
+						max_prioridad=reservas;
+			}else if(datos->cont_prioridades[administracion]!=0){
+						max_prioridad=administracion;
+			}else if (datos->cont_prioridades[consultas]!=0){
+						max_prioridad=consultas;
+		}
+		
 		for (i = 0; i <datos->num_pend; i++){
 				datos->prioridad_procesos[i];
-				if(prioridad<datos->prioridad_procesos[i]){
+				if(max_prioridad>datos->prioridad_procesos[i]){
 					mayor=1;
 					break;
 				}
@@ -375,7 +381,6 @@ sigaction(2,&ss,NULL);
 			for (i = 0; i <datos->num_pend; i++){
 				mensaje.ack = 1;
 				mensaje.mtype=datos->id_nodos_pend[i];
-				mensaje.posicion_main=datos->id_pid_pend[i];
 				if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
 				printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);

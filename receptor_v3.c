@@ -51,7 +51,6 @@ struct msg{
 	char text[100];
 	int id_nodo;
 	int ack;
-	int posicion_main;
 	int prioridad;
 	int cancelar;
 }mensaje;
@@ -143,6 +142,7 @@ sigaction(2,&ss,NULL);
 	posicionv = posicion;
 	int N = atoi(argv[2]);
 	int ack_procesos[255]={};
+	int ack=0;
 
 	
 	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
@@ -298,7 +298,7 @@ sigaction(2,&ss,NULL);
 			}else {
 				
 				datos->id_nodos_pend[datos->num_pend]= id_nodo_origen;
-				datos->id_pid_pend[datos->num_pend]= mensaje.getpid
+				datos->id_pid_pend[datos->num_pend]= mensaje.mi_pid;
 				datos -> prioridad_procesos[datos->num_pend]=mensaje.prioridad;
 				datos->num_pend++;
 				printf("Numero de pendientes: %d\n",datos->num_pend);
@@ -311,7 +311,7 @@ sigaction(2,&ss,NULL);
 			printf("OK recibido de %d\n", mensaje.id_nodo);
 			printf("PID destinatario %d\n",mensaje.mi_pid);
 			ack++;
-					if(ack_procesos[i]==N-1){
+					if(ack==N-1){
 						if(datos->cont_prioridades[pagos_anulaciones]!=0){
 									printf("[PAGOS / ANULACIONES] Concediendo acceso a SC\n");
 									sem_post(sem_name_paso_pagos_anulaciones);
@@ -333,7 +333,8 @@ sigaction(2,&ss,NULL);
 						printf("Esperando por mensajes...\n");
 
 					}
-			}
+			
+	
 		}else if(mensaje.cancelar==1){
 			
 				if(max_prioridad<mensaje.prioridad){
