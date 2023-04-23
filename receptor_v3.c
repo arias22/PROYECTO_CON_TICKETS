@@ -81,19 +81,9 @@ sprintf(name_mutex, "/MUTEX%d", posicionv);
 if(sem_unlink(name_mutex)==-1) perror("Name_mutex");//printf("NO SE DESTRUYO BIEN MUTEX\n");
 
 
-char name_mutex_between_main[50];
-sprintf(name_mutex_between_main, "/MUTEXMAIN%d", posicionv);
-if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
-
-
 char name_mutex2[50];
 sprintf(name_mutex2, "/MUTEX1%d",posicionv);
 if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
-
-
-char name_mutex3[50];
-sprintf(name_mutex3, "/MUTEX2%d", posicionv);
-if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 
 char name_paso[50];
 sprintf(name_paso, "/MUTEXPASO%d", posicionv);
@@ -180,7 +170,7 @@ sigaction(2,&ss,NULL);
 	datos->contador_paso_2=0;
 	datos->estado_anterior=0;
 		
-	//---------------------------------------DECLARACION SEMÁFOROS---------------------
+	//---------------------------------------DECLARACION SEMÁFOROS--------------------------------------------------------------
 	char name_mutex[50];
 	sprintf(name_mutex, "/MUTEX%s", argv[1]);
 	
@@ -191,14 +181,6 @@ sigaction(2,&ss,NULL);
 	     exit(-1);
 	}
 
-	char name_mutex_between_main[50];
-	sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv[1]);
-	sem_t *sem_mutex_between_main;
-	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 0);
-	if (sem_mutex_between_main == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
-	}
 	char name_mutex2[50];
 	sprintf(name_mutex2, "/MUTEX1%s", argv[1]);
 	sem_t *sem_mutex2;
@@ -207,14 +189,7 @@ sigaction(2,&ss,NULL);
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
 	}
-	char name_mutex3[50];
-	sprintf(name_mutex3, "/MUTEX2%s", argv[1]);
-	sem_t *sem_mutex3;
-	sem_mutex3 = sem_open(name_mutex3, O_CREAT, 0777, 1);
-	if (sem_mutex3 == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
-	}	
+
 	char name_paso[50];
 	sprintf(name_paso, "/MUTEXPASO%s", argv[1]);
 	sem_t *sem_name_paso;
@@ -260,6 +235,12 @@ sigaction(2,&ss,NULL);
 	     exit(-1);
 	}
 	printf("Mi ID %d\n",buzon);
+
+
+
+	//---------------------------------------DECLARACION SEMÁFOROS----------------------------------------
+
+
 	//--------------------------BUCLE DE ACCIONES DEL PROGRAMA-----------------------
 	
 	printf("Esperando por mensajes...\n");
@@ -278,14 +259,29 @@ sigaction(2,&ss,NULL);
 		pid_origen=mensaje.mi_pid;
 		max_prioridad=mensaje.prioridad;
 		
-		if(mensaje.ack==0 & mensaje.cancelar==0){//MENSAJES REQUEST
+
+
+
+
+		//COMPROBAMOS EL TIPO DE MENSAJE (CANCELACION, ACK O REQUEST)
+
+
+
+		//CASO REQUEST 
+
+
+
+		if(mensaje.ack==0 && mensaje.cancelar==0){
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 			
 			sem_wait(sem_mutex);
 			
 			datos->max_ticket = MAX(datos->max_ticket, ticket_origen);//compara su ticket con el ticket del que le llego 
 
-			
+			//COMPROBAMOS SI ENVIAMOS OK O LO AÑADIMOS A PENDIENTES
+
+
+			//CASO OK
 			if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->dentro==0){
 			
 					mensaje.ack = 1;
@@ -296,7 +292,10 @@ sigaction(2,&ss,NULL);
 				
 					printf("Envio OK a buzon %ld\n",mensaje.mtype);
 				
-			}else {
+			}
+			
+			//CASO AÑADIR A PENDIENTES
+			else {
 				
 				datos->id_nodos_pend[datos->num_pend]= id_nodo_origen;
 				datos->id_pid_pend[datos->num_pend]= mensaje.mi_pid;
@@ -308,12 +307,21 @@ sigaction(2,&ss,NULL);
 			printf("Esperando por mensajes...\n");
 			sem_post(sem_mutex);
 
-		}else if(mensaje.ack==1 & mensaje.cancelar==0){
+		}
+		
+
+		//CASO ACK
+
+
+		else if(mensaje.ack==1 && mensaje.cancelar==0){
 			printf("OK recibido de %d\n", mensaje.id_nodo);
 			printf("PID destinatario %d\n",mensaje.mi_pid);
 			printf("ack %d\n",datos->ack);
 			datos->ack++;
 			printf("ack 2%d\n",datos->ack);
+
+				//COMO SOLO PUDO HABER PEDIDO UN PROCESO ENTONCES SI NOS HAN LLEGADO N-1 ACKS SIMPLEMENTE DESPERTAMOS AL DE MAYOR PRIORIDAD 
+
 					if(datos->ack==N-1){
 						if(datos->cont_prioridades[pagos_anulaciones]!=0){
 									printf("[PAGOS / ANULACIONES] Concediendo acceso a SC\n");
@@ -338,7 +346,14 @@ sigaction(2,&ss,NULL);
 					}
 			
 	
-		}else if(mensaje.cancelar==1){
+		}
+		
+		
+		
+		//CASO CANCELAR
+
+		
+		else if(mensaje.cancelar==1){
 				printf("id nodo a eliminar %d\n",mensaje.mi_id);
 				
 					for(int i=0;i<datos->num_pend;i++){
