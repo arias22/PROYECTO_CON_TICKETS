@@ -76,7 +76,6 @@ if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
 
 char name_mutex[50];
 sprintf(name_mutex, "/MUTEX%d", posicionv);
-printf("%s",name_mutex);
 if(sem_unlink(name_mutex)==-1) perror("Name_mutex");//printf("NO SE DESTRUYO BIEN MUTEX\n");
 
 
@@ -97,6 +96,25 @@ if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
 char name_paso[50];
 sprintf(name_paso, "/MUTEXPASO%d", posicionv);
 if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
+
+char name_paso_consulta[50];
+sprintf(name_paso_consulta, "/MUTEXPASOCONSULTA%d", posicionv);
+if(sem_unlink(name_paso_consulta)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASOCONSULTA\n");
+
+char name_paso_administracion[50];
+sprintf(name_paso_administracion, "/MUTEXPASOADMINISTRACION%d",posicionv);
+if(sem_unlink(name_paso_administracion)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASOADMINISTRACION\n");
+
+
+char name_paso_reservas[50];
+sprintf(name_paso_reservas, "/MUTEXPASORESERVAS%d", posicionv);
+if(sem_unlink(name_paso_reservas)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASORESERVAS\n");
+
+
+char name_paso_pagos_anulaciones[50];
+sprintf(name_paso_pagos_anulaciones, "/MUTEXPASOPAGOSANULACIONES%s", posicionv);
+if(sem_unlink(name_paso_pagos_anulaciones)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASOPAGOSANULACIONES\n");
+
 
     exit(0);
 }
@@ -199,6 +217,42 @@ sigaction(2,&ss,NULL);
 	sprintf(name_paso, "/MUTEXPASO%s", argv[1]);
 	sem_t *sem_name_paso;
 	sem_name_paso = sem_open(name_paso, O_CREAT, 0777, 0);
+	if (sem_name_paso == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+
+			char name_paso_consulta[50];
+	sprintf(name_paso_consulta, "/MUTEXPASOCONSULTA%s", argv[1]);
+	sem_t *sem_name_paso_consulta;
+	sem_name_paso_consulta = sem_open(name_paso_consulta, O_CREAT, 0777, 0);
+	if (sem_name_paso_consulta == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+
+		char name_paso_administracion[50];
+	sprintf(name_paso_administracion, "/MUTEXPASOADMINISTRACION%s", argv[1]);
+	sem_t *sem_name_paso_administracion;
+	sem_name_paso_administracion = sem_open(name_paso_administracion, O_CREAT, 0777, 0);
+	if (sem_name_paso == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+
+		char name_paso_reservas[50];
+	sprintf(name_paso_reservas, "/MUTEXPASORESERVAS%s", argv[1]);
+	sem_t *sem_name_paso_reservas;
+	sem_name_paso_reservas = sem_open(name_paso_reservas, O_CREAT, 0777, 0);
+	if (sem_name_paso == SEM_FAILED) {
+	     perror("Failed to open semphore for empty");
+	     exit(-1);
+	}
+
+		char name_paso_pagos_anulaciones[50];
+	sprintf(name_paso_pagos_anulaciones, "/MUTEXPASOPAGOSANULACIONES%s", argv[1]);
+	sem_t *sem_name_paso_pagos_anulaciones;
+	sem_name_paso_pagos_anulaciones = sem_open(name_paso_pagos_anulaciones, O_CREAT, 0777, 0);
 	if (sem_name_paso == SEM_FAILED) {
 	     perror("Failed to open semphore for empty");
 	     exit(-1);
