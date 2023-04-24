@@ -42,6 +42,8 @@ typedef struct datos_comp{
 	int cont_prioridades[4];
 	int prioridad_procesos[100];
 	int ack;
+	int consultas_activas;
+	int espera;
 }datos_comp;
 
 struct msg{
@@ -54,6 +56,8 @@ struct msg{
 	int ack;
 	int prioridad;
 	int cancelar;
+	int consulta;
+	int fin_consultas;
 }mensaje;
 
 
@@ -173,6 +177,7 @@ sigaction(2,&ss,NULL);
 	}
 	
 	datos->dentro=0;
+	datos->espera=0;
 	datos->procesos=0;
 	datos->primero=0;
 	datos->ultimo=0;
@@ -274,11 +279,12 @@ sigaction(2,&ss,NULL);
 
 
 		ticket_origen=mensaje.mi_ticket;
+		printf("ticket origen %d\n",ticket_origen);
 		id_nodo_origen=mensaje.mi_id;
 		pid_origen=mensaje.mi_pid;
 		max_prioridad=mensaje.prioridad;
 		
-		if(mensaje.ack==0 & mensaje.cancelar==0){//MENSAJES REQUEST
+		if(mensaje.ack==0 & mensaje.cancelar==0 & mensaje.consulta==0 & mensaje.fin_consultas==0){//MENSAJES REQUEST
 			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
 			
 			sem_wait(sem_mutex);
@@ -286,7 +292,7 @@ sigaction(2,&ss,NULL);
 			datos->max_ticket = MAX(datos->max_ticket, ticket_origen);//compara su ticket con el ticket del que le llego 
 
 			
-			if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->dentro==0){
+			if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->espera==0){
 			
 					mensaje.ack = 1;
 					mensaje.id_nodo=buzon;
@@ -308,7 +314,7 @@ sigaction(2,&ss,NULL);
 			printf("Esperando por mensajes...\n");
 			sem_post(sem_mutex);
 
-		}else if(mensaje.ack==1 & mensaje.cancelar==0){
+		}else if(mensaje.ack==1 & mensaje.cancelar==0 & mensaje.fin_consultas==0){
 			printf("OK recibido de %d\n", mensaje.id_nodo);
 			printf("PID destinatario %d\n",mensaje.mi_pid);
 			printf("ack %d\n",datos->ack);
@@ -338,7 +344,7 @@ sigaction(2,&ss,NULL);
 					}
 			
 	
-		}else if(mensaje.cancelar==1){
+		}else if(mensaje.cancelar==1 & mensaje.fin_consultas==0){
 				printf("id nodo a eliminar %d\n",mensaje.mi_id);
 				
 					for(int i=0;i<datos->num_pend;i++){
@@ -357,6 +363,20 @@ sigaction(2,&ss,NULL);
 					printf("Esperando por mensajes...\n");
 
 				
+		}else if (mensaje.consulta==1 & mensaje.cancelar==0 & mensaje.ack==0 & mensaje.fin_consultas==0){
+				printf("Abriendo el grifo de consultas\n");
+				int ctr = datos->cont_prioridades[consultas];
+				for(int i = 0;i<ctr;i++){
+									printf("VALOR CONTADOR %d",datos->cont_prioridades[consultas]);
+									printf("[CONSULTAS] Concediendo acceso a SC\n");
+									sem_post(sem_name_paso_consulta);
+									
+						}
+				datos->consultas_activas=1;
+		}else if (mensaje.consulta==0 & mensaje.cancelar==0 & mensaje.ack==0 & mensaje.fin_consultas==1){
+				printf("Cerrando el grifo de consultas\n");
+				datos->consultas_activas=0;
+				datos->ack=0;
 		}
 		
 		}
