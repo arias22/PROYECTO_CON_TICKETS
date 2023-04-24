@@ -86,6 +86,7 @@ sigaction(2,&ss,NULL);
 	int mayor=0;
 	int contadores = 0;
 	int max_prioridad=0;
+	char nombres_prioridades[][30]={"PAGOS/ANULACIONES","RESERVAS","ADMINISTRACION","CONSULTAS"};
 	
 	 if (argc != 4){
 		printf("formato incorrecto: ./v1_main posicion N prioridad\n");
@@ -221,6 +222,7 @@ sigaction(2,&ss,NULL);
 	
 	printf("Mi PID %d\n",getpid());
 	printf("Numero de procesos %d\n",datos->procesos);
+	printf("PROCESO %s\n",nombres_prioridades[prioridad]);
 
 	//-------------------FIN INICIALIZACION DE LAS VARIABLES COMPARTIDAS----------------------------------
 
@@ -240,7 +242,6 @@ sigaction(2,&ss,NULL);
 
 	 	sem_wait(sem_mutex);
 		datos->quiero = 1;
-		datos->dentro++;
 		datos->mi_ticket = datos->max_ticket + 1; 								// GENERACIÓN DE UN TICKET MAYOR AL ANTERIOR
 		sem_post(sem_mutex);
 		
@@ -265,7 +266,7 @@ sigaction(2,&ss,NULL);
 			}else if (datos->cont_prioridades[consultas]!=0){
 						max_prioridad=consultas;
 		}
-
+		printf("Max prioridad");
 		if (max_prioridad>prioridad){
 				max_prioridad=1;
 		} else max_prioridad=0;
@@ -275,9 +276,9 @@ sigaction(2,&ss,NULL);
 
 
 
-		if(datos->primero==0 || max_prioridad==1){
+		if((datos->primero==0 || max_prioridad==1) && datos->dentro==0){
 
-			
+							
 			//IF PARA ENVIAR CANCELACIONES
 
 			if(datos->primero!=0  && max_prioridad==1){
@@ -462,7 +463,7 @@ sigaction(2,&ss,NULL);
 
 		
 		//ENTRADA  SECCIÓN CRÍTICA 
-
+		datos->dentro++;
 		printf("En la Seccion Crítica\n");
 		//printf("Dentro %d\n",datos->dentro);
 		
