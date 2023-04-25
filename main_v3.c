@@ -255,7 +255,7 @@ sigaction(2,&ss,NULL);
 		if(datos->consultas_activas==1 && prioridad!=consultas){
 				datos->consultas_activas=0;
 				for (i = 0; i <=N-1; i++){
-					if(1235+i!=id_nodos){
+					
 					
 						mensaje.ack = 0;
 						mensaje.cancelar=0;
@@ -271,7 +271,7 @@ sigaction(2,&ss,NULL);
 						
 						printf("[FIN CONSULTAS] enviado a %ld\n",mensaje.mtype);
 					
-					}
+					
 				}
 
 				for (i = 0; i <=N-1; i++){
@@ -452,6 +452,7 @@ sigaction(2,&ss,NULL);
 					for (i = 0; i <datos->num_pend; i++){
 						mensaje.ack = 1;
 						mensaje.mtype=datos->id_nodos_pend[i];
+						mensaje.mi_id=id_nodos;
 						if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 						
 						printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
@@ -590,16 +591,15 @@ sigaction(2,&ss,NULL);
 		//SI O BIEN LAS COLAS ESTÁN VACÍA O ENCONTRAMOS EN OTRO NODO OTRO PROCESO DE PRIORIDAD MAYOR  EJECUTAMOS EL IF
 
 		if(mayor==1 || contadores==4 ){
-				
-			//ENVIAMOS ACK PENDIENTES
-		
-			for (i = 0; i <datos->num_pend; i++){
+
+			if(datos->dentro==0 && prioridad==consultas){
+				for (i = 0; i <datos->num_pend; i++){
 				mensaje.ack = 1;
 				mensaje.mtype=datos->id_nodos_pend[i];
 				if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
 				printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
-			}
+				}
 
 
 
@@ -610,6 +610,28 @@ sigaction(2,&ss,NULL);
 				printf("Todos los OK pendientes enviados\n");
 			
 
+			}else if(prioridad!=consultas){
+				for (i = 0; i <datos->num_pend; i++){
+				mensaje.ack = 1;
+				mensaje.mtype=datos->id_nodos_pend[i];
+				if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
+				
+				printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
+				}
+
+
+
+
+				datos->num_pend = 0; 
+				mayor=0;	
+				contadores = 0;
+				printf("Todos los OK pendientes enviados\n");
+			
+			}
+			
+			//ENVIAMOS ACK PENDIENTES
+		
+			
 
 				//ENCUENTRAS EL PROCESO EN ESPERA CON MAYOR PRIORIDAD Y HACES UN REQUEST POR ÉL
 
