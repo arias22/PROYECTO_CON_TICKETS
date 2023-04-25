@@ -514,7 +514,7 @@ sigaction(2,&ss,NULL);
 		if(prioridad==consultas && datos->consultas_activas==0){
 			datos->consultas_activas=1;
 			for (i = 0; i <=N-1; i++){
-							if(1235+i!=id_nodos){
+							
 							
 								mensaje.ack = 0;
 								mensaje.cancelar = 0;
@@ -528,7 +528,7 @@ sigaction(2,&ss,NULL);
 								
 								printf("[CONSULTAS] enviado a %ld\n",mensaje.mtype);
 					
-							}
+							
 					}
 		}
 		printf("En la Seccion Crítica\n");
