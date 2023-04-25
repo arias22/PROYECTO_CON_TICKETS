@@ -90,7 +90,7 @@ j=1
 # Itera sobre la lista de programas y abre una nueva ventana de terminal para cada uno
 for programa in "${programas_receptor[@]}"
 do
-  gnome-terminal --title="Nodo $i - Receptor" -- bash -c "$programa; exec bash"
+  gnome-terminal --title="Nodo - ${programa}" -- bash -c "$programa; exec bash"
   
   i=$((i+1))
 
@@ -98,7 +98,7 @@ done
 
 for programa in "${programas_main[@]}"
 do
-  gnome-terminal --title="Nodo $j - Main" -- bash -c "$programa; exec bash"
+  gnome-terminal --title="Nodo - ${programa}" -- bash -c "$programa; exec bash"
   
   j=$((j+1))
 
