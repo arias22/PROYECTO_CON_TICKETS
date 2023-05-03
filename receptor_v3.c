@@ -1,7 +1,7 @@
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <sys/ipc.h> 
-#include <sys/msg.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -13,9 +13,8 @@
 #include <signal.h>
 #include <signal.h>
 
-
 int posicionv;
-#define MAX(i,j) (((i)>(j)) ? (i) : (j))
+#define MAX(i, j) (((i) > (j)) ? (i) : (j))
 #define SIZE 50
 #define pagos_anulaciones 0
 #define reservas 1
@@ -23,362 +22,388 @@ int posicionv;
 #define consultas 3
 
 // --------- VARIABLES COMPARTIDAS----------
-typedef struct datos_comp{
+typedef struct datos_comp
+{
 	int mi_ticket;
 	int mi_id;
 	int id_nodos_pend[100];
 	int num_pend;
 	int quiero;
 	int max_ticket;
-	//añadidas
+	// añadidas
 	int dentro;
+	int prioridad_request;
 	int procesos;
 	int primero;
-	int ultimo;
-	int contador_paso_1;
-	int contador_paso_2;
-	int estado_anterior;
-	int id_pid_pend[100];
 	int cont_prioridades[4];
 	int prioridad_procesos[100];
 	int ack;
-	int consultas_activas;
 	int espera;
-}datos_comp;
+	int consultas_dentro;
+} datos_comp;
 
-struct msg{
-	long mtype;
-	int mi_ticket;
-	int mi_pid;
-	int mi_id;
-	char text[100];
-	int id_nodo;
-	int ack;
-	int prioridad;
-	int cancelar;
-	int consulta;
-	int fin_consultas;
-}mensaje;
-
-
+struct msg
+{
+	long mtype;		  // TIPO DE MENSAJE
+	int mi_ticket;	  // TICKET MENSAJE
+	int mi_id;		  // ID NODO
+	int tipo_mensaje; // TIPO DEL MENSAJE   '0' ===> REQUEST         '1' ======> ACK
+	int prioridad;	  // PRIORIDAD MENSAJE
+} mensaje;
 
 int msqid2_glob;
-void handle_sigint(int signal) {
+void handle_sigint(int signal)
+{
 
-printf("posicion al borrar es = %d\n",posicionv);
-key_t clave1 = ftok(".",posicionv);
-//BORRAR MEMORIA COMPARTIDA
- int shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);
-  if (shmctl(shmid1, IPC_RMID, NULL) == -1) {
-     perror("Error al borrar la memoria compartida");
-      exit(1);
-   }
-//BORRAR BUZON MENSAJES
-if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1) {
-        perror("msgctl");
+	printf("posicion al borrar es = %d\n", posicionv);
+	key_t clave1 = ftok(".", posicionv);
+	// BORRAR MEMORIA COMPARTIDA
+	int shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT | 0660);
+	if (shmctl(shmid1, IPC_RMID, NULL) == -1)
+	{
+		perror("Error al borrar la memoria compartida");
+		exit(1);
+	}
+	// BORRAR BUZON MENSAJES
+	if (msgctl(msqid2_glob, IPC_RMID, NULL) == -1)
+	{
+		perror("msgctl");
+	}
+	// BORRAR SEMÁFOROS
 
-    }
-//BORRAR SEMÁFOROS
+	char name_mutex[50];
+	sprintf(name_mutex, "/MUTEX%d", posicionv);
+	if (sem_unlink(name_mutex) == -1)
+		perror("Name_mutex"); // printf("NO SE DESTRUYO BIEN MUTEX\n");
 
-char name_mutex[50];
-sprintf(name_mutex, "/MUTEX%d", posicionv);
-if(sem_unlink(name_mutex)==-1) perror("Name_mutex");//printf("NO SE DESTRUYO BIEN MUTEX\n");
+	char name_mutex2[50];
+	sprintf(name_mutex2, "/MUTEX1%d", posicionv);
+	if (sem_unlink(name_mutex2) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEX1\n");
 
+	char name_paso[50];
+	sprintf(name_paso, "/MUTEXPASO%d", posicionv);
+	if (sem_unlink(name_paso) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
 
-char name_mutex_between_main[50];
-sprintf(name_mutex_between_main, "/MUTEXMAIN%d", posicionv);
-if(sem_unlink(name_mutex_between_main)==-1) printf("NO SE DESTRUYO BIEN MUTEXMAIN\n");
+	char name_paso_consulta[50];
+	sprintf(name_paso_consulta, "/MUTEXPASOCONSULTA%d", posicionv);
+	if (sem_unlink(name_paso_consulta) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEXPASOCONSULTA\n");
 
+	char name_paso_administracion[50];
+	sprintf(name_paso_administracion, "/MUTEXPASOADMINISTRACION%d", posicionv);
+	if (sem_unlink(name_paso_administracion) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEXPASOADMINISTRACION\n");
 
-char name_mutex2[50];
-sprintf(name_mutex2, "/MUTEX1%d",posicionv);
-if(sem_unlink(name_mutex2)==-1) printf("NO SE DESTRUYO BIEN MUTEX1\n");
+	char name_paso_reservas[50];
+	sprintf(name_paso_reservas, "/MUTEXPASORESERVAS%d", posicionv);
+	if (sem_unlink(name_paso_reservas) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEXPASORESERVAS\n");
 
+	char name_paso_pagos_anulaciones[50];
+	sprintf(name_paso_pagos_anulaciones, "/MUTEXPASOPAGOSANULACIONES%d", posicionv);
+	if (sem_unlink(name_paso_pagos_anulaciones) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEXPASOPAGOSANULACIONES\n");
 
-char name_mutex3[50];
-sprintf(name_mutex3, "/MUTEX2%d", posicionv);
-if(sem_unlink(name_mutex3)==-1) printf("NO SE DESTRUYO BIEN MUTEX2\n");
-
-char name_paso[50];
-sprintf(name_paso, "/MUTEXPASO%d", posicionv);
-if(sem_unlink(name_paso)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASO\n");
-
-char name_paso_consulta[50];
-sprintf(name_paso_consulta, "/MUTEXPASOCONSULTA%d", posicionv);
-if(sem_unlink(name_paso_consulta)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASOCONSULTA\n");
-
-char name_paso_administracion[50];
-sprintf(name_paso_administracion, "/MUTEXPASOADMINISTRACION%d",posicionv);
-if(sem_unlink(name_paso_administracion)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASOADMINISTRACION\n");
-
-
-char name_paso_reservas[50];
-sprintf(name_paso_reservas, "/MUTEXPASORESERVAS%d", posicionv);
-if(sem_unlink(name_paso_reservas)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASORESERVAS\n");
-
-
-char name_paso_pagos_anulaciones[50];
-sprintf(name_paso_pagos_anulaciones, "/MUTEXPASOPAGOSANULACIONES%d", posicionv);
-if(sem_unlink(name_paso_pagos_anulaciones)==-1) printf("NO SE DESTRUYO BIEN MUTEXPASOPAGOSANULACIONES\n");
-
-
-    exit(0);
+	exit(0);
 }
 
+int main(int argc, char *argv[])
+{
+	struct sigaction ss;
+	ss.sa_handler = handle_sigint;
+	ss.sa_flags = 0;
+	sigaction(2, &ss, NULL);
 
-int main(int argc,char *argv[]) {
-struct sigaction ss;
-ss.sa_handler = handle_sigint;
-ss.sa_flags = 0;
-sigaction(2,&ss,NULL);
 	//-------------VARIABLE PROPIAS--------------------------
-	
-	int id_nodo_origen = 0, ticket_origen = 0, pid_origen=0;
-	
-	 if (argc != 3){
+
+	int id_nodo_origen = 0, ticket_origen = 0;
+
+	if (argc != 3)
+	{
 		printf("formato incorrecto: ./v1_receptor posicion N\n");
 		exit(-1);
 	}
 
-
-	int max_prioridad=0;
-	int posicion=atoi(argv[1]);
-	int buzon=1235+posicion;
+	int posicion = atoi(argv[1]); // POSICION DEL NODO
 	posicionv = posicion;
-	int N = atoi(argv[2]);
-	int ack_procesos[255]={};
-	int ack=0;
+	int buzon = 1235 + posicion; // ID DEL NODO
+	int N = atoi(argv[2]);		 // NUMERO DE NODOS
 
-	
-	//----------VARIABLES DE LA MEMORIA COMPARTIDA---------------
-	key_t clave1; //clave de acceso a la memoria 1
-	int shmid1; //identificador de la zona de memoria 1
+	// VARIABLES DE APOYO
+
+	int ack_procesos[255] = {};
+	int ack = 0;
+	int max_prioridad = 0;
+	int prioridad_mensaje;
+
+	//-------------FIN VARIABLE PROPIAS--------------------------
+
 	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
-	int msqid = msgget(500,0666 | IPC_CREAT);
+
+	int msqid = msgget(500, 0666 | IPC_CREAT);
 	msqid2_glob = msqid;
+
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
+
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------
-	clave1 = ftok(".",posicion); //creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
-	 
-	shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT|0660);//Creación de zona_mem1
-	 
-	if(shmid1 !=-1){
+
+	key_t clave1;				  // clave de acceso a la memoria 1
+	int shmid1;					  // identificador de la zona de memoria 1
+	clave1 = ftok(".", posicion); // creamos la clave que utilizaremos para crear la zona de memoria y luego poder vincularla
+
+	shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT | 0660); // Creación de zona_mem1
+
+	if (shmid1 != -1)
+	{
 		printf("Zona de memoria creada OK! con identificador %d \n", shmid1);
-	}else{
+	}
+	else
+	{
 		printf("ERROR al crear zona de memoria 1 !! \n");
 		exit(-1);
 	}
-	 	 
-	datos_comp *datos =(datos_comp *)shmat(shmid1,0,0);//Vinculamos el proceso con la zona de memoria
-	 
-	if(datos == (datos_comp*)-1){
+
+	datos_comp *datos = (datos_comp *)shmat(shmid1, 0, 0); // Vinculamos el proceso con la zona de memoria
+
+	if (datos == (datos_comp *)-1)
+	{
 		printf("Error al vincular el proceso a la zona de memoria 1! \n");
 		exit(1);
 	}
-	
-	datos->dentro=0;
-	datos->espera=0;
-	datos->procesos=0;
-	datos->primero=0;
-	datos->ultimo=0;
-	datos->contador_paso_1=0;
-	datos->contador_paso_2=0;
-	datos->estado_anterior=0;
-		
-	//---------------------------------------DECLARACION SEMÁFOROS---------------------
-	char name_mutex[50];
-	sprintf(name_mutex, "/MUTEX%s", argv[1]);
-	
-	sem_t *sem_mutex;
-	sem_mutex = sem_open(name_mutex, O_CREAT, 0777, 1);
-	if (sem_mutex == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+
+	datos->dentro = 0;
+	datos->procesos = 0;
+	datos->primero = 0;
+
+	for (int i = 0; i < N; i++)
+	{
+		datos->id_nodos_pend[i] = 0;
 	}
 
-	char name_mutex_between_main[50];
-	sprintf(name_mutex_between_main, "/MUTEXMAIN%s", argv[1]);
-	sem_t *sem_mutex_between_main;
-	sem_mutex_between_main = sem_open(name_mutex_between_main, O_CREAT, 0777, 0);
-	if (sem_mutex_between_main == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	//---------------------------------------DECLARACION SEMÁFOROS--------------------------------------------------------------
+	char name_mutex[50];
+	sprintf(name_mutex, "/MUTEX%s", argv[1]);
+
+	sem_t *sem_mutex;
+	sem_mutex = sem_open(name_mutex, O_CREAT, 0777, 1);
+	if (sem_mutex == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
+
 	char name_mutex2[50];
 	sprintf(name_mutex2, "/MUTEX1%s", argv[1]);
 	sem_t *sem_mutex2;
 	sem_mutex2 = sem_open(name_mutex2, O_CREAT, 0777, 1);
-	if (sem_mutex2 == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	if (sem_mutex2 == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
-	char name_mutex3[50];
-	sprintf(name_mutex3, "/MUTEX2%s", argv[1]);
-	sem_t *sem_mutex3;
-	sem_mutex3 = sem_open(name_mutex3, O_CREAT, 0777, 1);
-	if (sem_mutex3 == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
-	}	
+
 	char name_paso[50];
 	sprintf(name_paso, "/MUTEXPASO%s", argv[1]);
 	sem_t *sem_name_paso;
 	sem_name_paso = sem_open(name_paso, O_CREAT, 0777, 0);
-	if (sem_name_paso == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	if (sem_name_paso == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
 
-			char name_paso_consulta[50];
+	char name_paso_consulta[50];
 	sprintf(name_paso_consulta, "/MUTEXPASOCONSULTA%s", argv[1]);
 	sem_t *sem_name_paso_consulta;
+
 	sem_name_paso_consulta = sem_open(name_paso_consulta, O_CREAT, 0777, 0);
-	if (sem_name_paso_consulta == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	if (sem_name_paso_consulta == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
 
-		char name_paso_administracion[50];
+	char name_paso_administracion[50];
 	sprintf(name_paso_administracion, "/MUTEXPASOADMINISTRACION%s", argv[1]);
 	sem_t *sem_name_paso_administracion;
 	sem_name_paso_administracion = sem_open(name_paso_administracion, O_CREAT, 0777, 0);
-	if (sem_name_paso_administracion == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	if (sem_name_paso_administracion == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
 
-		char name_paso_reservas[50];
+	char name_paso_reservas[50];
 	sprintf(name_paso_reservas, "/MUTEXPASORESERVAS%s", argv[1]);
 	sem_t *sem_name_paso_reservas;
 	sem_name_paso_reservas = sem_open(name_paso_reservas, O_CREAT, 0777, 0);
-	if (sem_name_paso_reservas == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	if (sem_name_paso_reservas == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
 
-		char name_paso_pagos_anulaciones[50];
+	char name_paso_pagos_anulaciones[50];
 	sprintf(name_paso_pagos_anulaciones, "/MUTEXPASOPAGOSANULACIONES%s", argv[1]);
 	sem_t *sem_name_paso_pagos_anulaciones;
 	sem_name_paso_pagos_anulaciones = sem_open(name_paso_pagos_anulaciones, O_CREAT, 0777, 0);
-	if (sem_name_paso_pagos_anulaciones == SEM_FAILED) {
-	     perror("Failed to open semphore for empty");
-	     exit(-1);
+	if (sem_name_paso_pagos_anulaciones == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
 	}
-	printf("Mi ID %d\n",buzon);
+	printf("Mi ID %d\n", buzon);
+
+	//---------------------------------------DECLARACION SEMÁFOROS----------------------------------------
+
 	//--------------------------BUCLE DE ACCIONES DEL PROGRAMA-----------------------
-	
+
 	printf("Esperando por mensajes...\n");
-	
-	while (1) { 
-	
-		
-		//RECIBE LOS MENSAJE EN SU ID DE NODO
 
-		
-		msgrcv(msqid, &mensaje,sizeof(struct msg),buzon, 0); 
+	while (1)
+	{
 
+		// RECIBE LOS MENSAJE EN SU ID DE NODO
 
-		ticket_origen=mensaje.mi_ticket;
-		printf("ticket origen %d\n",ticket_origen);
-		id_nodo_origen=mensaje.mi_id;
-		pid_origen=mensaje.mi_pid;
-		max_prioridad=mensaje.prioridad;
-		
-		if(mensaje.ack==0 & mensaje.cancelar==0 & mensaje.consulta==0 & mensaje.fin_consultas==0){//MENSAJES REQUEST
-			printf("Me llegó un mensaje de %d con el ticket %i\n",pid_origen,ticket_origen);
-			
+		msgrcv(msqid, &mensaje, sizeof(struct msg), buzon, 0);
+
+		printf("ME LLEGA UN MENSAJE DEL NODO %d CON TIPO DE MENSAJE %d\n", mensaje.mi_id, mensaje.tipo_mensaje);
+
+		ticket_origen = mensaje.mi_ticket;
+		id_nodo_origen = mensaje.mi_id;
+		prioridad_mensaje = mensaje.prioridad;
+
+		// COMPROBAMOS EL TIPO DE MENSAJE (CANCELACION, ACK O REQUEST)tipo_mensaje
+
+		// CASO REQUEST
+
+		if (mensaje.tipo_mensaje == 0)
+		{
+			printf("Me llegó un mensaje de %d con el ticket %i y prioridad %d\n", id_nodo_origen, ticket_origen, max_prioridad);
+
 			sem_wait(sem_mutex);
-			
-			datos->max_ticket = MAX(datos->max_ticket, ticket_origen);//compara su ticket con el ticket del que le llego 
 
-			
-			if ((!(datos->quiero) || ticket_origen < datos->mi_ticket|| (ticket_origen == datos->mi_ticket & (id_nodo_origen <datos->mi_id))) & datos->espera==0){
-			
-					mensaje.ack = 1;
-					mensaje.id_nodo=buzon;
-					mensaje.mtype=id_nodo_origen;
+			datos->max_ticket = MAX(datos->max_ticket, ticket_origen); // compara su ticket con el ticket del que le llego
 
-					msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
-				
-					printf("Envio OK a buzon %ld\n",mensaje.mtype);
-				
-			}else {
-				
-				datos->id_nodos_pend[datos->num_pend]= id_nodo_origen;
-				datos->id_pid_pend[datos->num_pend]= mensaje.mi_pid;
-				datos -> prioridad_procesos[datos->num_pend]=mensaje.prioridad;
-				datos->num_pend++;
-				printf("Numero de pendientes: %d\n",datos->num_pend);
+			// COMPROBAMOS SI ENVIAMOS OK O LO AÑADIMOS A PENDIENTES
+
+			// SI EL REQUEST LLEGA DE MAYOR PRIORIDAD DE LOS QUE ESTÁN EN LA COLA ENTONCES BORRAMOS TODOS LOS ACK
+
+			// SI LA PRIORIDAD DEL REQUEST ES MAYOR QUE EL MIO ENTONCES HAY QUE BORRAR TUS ACKS Y VOLVER A ENVIAR REQUEST
+
+			printf("PRIORIDAD DEL MENSAJE %d\n", prioridad_mensaje);
+			printf("PRIORIDAD DE MI REQUEST %d\n", datos->prioridad_request);
+			printf("MI TICKET:%d\n", datos->mi_ticket);
+
+			if (prioridad_mensaje < datos->prioridad_request && datos->espera != 0 && datos->dentro == 0)
+			{
+
+				printf("BORRO ACKS\n");
+				datos->ack = 0;
+				printf("Envio OK a buzon %d\n", id_nodo_origen);
+				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+				mensaje.mi_id = buzon;			// INIDICA TU NODO
+				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
+
+				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+
+				//ACTUALIZO EL TICKET
+				datos->mi_ticket = datos->max_ticket + 1;
+				for (int i = 0; i <= N - 1; i++)
+				{
+					if (1235 + i != buzon)
+
+
+
+						
+
+						mensaje.mtype = 1235 + i;					  // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+						mensaje.mi_id = buzon;						  // INIDICA TU NODO
+						mensaje.prioridad = datos->prioridad_request; // INDICA TU PRIORIDAD
+						mensaje.tipo_mensaje = 0;					  // INDICA EL TIPO DE MENSAJE
+						mensaje.mi_ticket = datos->mi_ticket;		  // ENVIAS EL MENSAJE
+
+						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+						printf("[REQUEST] enviado a %ld\n", mensaje.mtype);
+					}
+				}
 			
+			else if ((!(datos->quiero) || ticket_origen < datos->mi_ticket || (ticket_origen == datos->mi_ticket & (id_nodo_origen < buzon))) && datos->dentro == 0 )
+			{
+
+				printf("Envio OK a buzon %d\n", id_nodo_origen);
+				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+				mensaje.mi_id = buzon;			// INIDICA TU NODO
+				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
+
+				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 			}
-			printf("Esperando por mensajes...\n");
+
+			// CASO AÑADIR A PENDIENTES
+			else
+			{
+
+				datos->id_nodos_pend[id_nodo_origen - 1235] = id_nodo_origen; // id_nodo_origen -1235 = posicion del nodo
+				datos->prioridad_procesos[id_nodo_origen - 1235] = prioridad_mensaje;
+				printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[id_nodo_origen - 1235], datos->prioridad_procesos[id_nodo_origen - 1235]);
+
+				int ctr = 0;
+
+				for (int i = 0; i < N; i++)
+				{
+					if (datos->id_nodos_pend[i] != 0)
+						ctr++;
+				}
+				printf("Nº NODOS PENDIENTES %d\n", ctr);
+
+				for (int i = 0; i < N; i++)
+				{
+					printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[i], datos->prioridad_procesos[i]);
+				}
+			}
+
 			sem_post(sem_mutex);
+		}else if (mensaje.tipo_mensaje == 1) // CASO ACK
+		{
 
-		}else if(mensaje.ack==1 & mensaje.cancelar==0 & mensaje.fin_consultas==0){
-			printf("OK recibido de %d\n", mensaje.id_nodo);
-			printf("PID destinatario %d\n",mensaje.mi_pid);
-			printf("ack %d\n",datos->ack);
-			datos->ack++;
-			printf("ack 2%d\n",datos->ack);
-					if(datos->ack==N-1){
-						if(datos->cont_prioridades[pagos_anulaciones]!=0){
-									printf("[PAGOS / ANULACIONES] Concediendo acceso a SC\n");
-									sem_post(sem_name_paso_pagos_anulaciones);
-									
-						}else if(datos->cont_prioridades[reservas]!=0){
-									printf("[RESERVAS] Concediendo acceso a SC\n");
-									sem_post(sem_name_paso_reservas);
-									
-						}else if(datos->cont_prioridades[administracion]!=0){
-									printf("[ADMINISTRACIÓN] Concediendo acceso a SC\n");
-									sem_post(sem_name_paso_administracion);
-									
-						}else if (datos->cont_prioridades[consultas]!=0){
-									printf("[CONSULTAS] Concediendo acceso a SC\n");
-									sem_post(sem_name_paso_consulta);
-									
-						}
-						datos->ack=0;
-						printf("Esperando por mensajes...\n");
+			printf("OK recibido de %d\n", id_nodo_origen);
+			printf("Prioridad destinatario %d\n", mensaje.prioridad);
 
-					}
-			
-	
-		}else if(mensaje.cancelar==1 & mensaje.fin_consultas==0){
-				printf("id nodo a eliminar %d\n",mensaje.mi_id);
-				
-					for(int i=0;i<datos->num_pend;i++){
-						if(datos->id_nodos_pend[i]==mensaje.mi_id)
-						{
-							datos->id_nodos_pend[i]=0;
-							break;
-						}
-					}
-					
-					for(int i=0;i<datos->num_pend;i++){
-						
-						printf(" nodos pendientes %d\n",datos->id_nodos_pend[i]);
-					}
-						
-					printf("Esperando por mensajes...\n");
+			if (mensaje.prioridad == datos->prioridad_request)
+				datos->ack++; // SOLO SUMAS LOS ACKS SI TE LLEGAN DE LA PRIORIDAD CORRESPONDIENTE
 
-				
-		}else if (mensaje.consulta==1 & mensaje.cancelar==0 & mensaje.ack==0 & mensaje.fin_consultas==0){
-				printf("Abriendo el grifo de consultas\n");
-				int ctr = datos->cont_prioridades[consultas];
-				for(int i = 0;i<ctr;i++){
-									printf("VALOR CONTADOR %d",datos->cont_prioridades[consultas]);
-									printf("[CONSULTAS] Concediendo acceso a SC\n");
-									sem_post(sem_name_paso_consulta);
-									
-						}
-				datos->consultas_activas=1;
-		}else if (mensaje.consulta==0 & mensaje.cancelar==0 & mensaje.ack==0 & mensaje.fin_consultas==1){
-				printf("Cerrando el grifo de consultas\n");
-				datos->consultas_activas=0;
-				datos->ack=0;
+			printf("ack %d\n", datos->ack);
+
+			// COMO SOLO PUDO HABER PEDIDO UN PROCESO ENTONCES SI NOS HAN LLEGADO N-1 ACKS SIMPLEMENTE DESPERTAMOS AL DE MAYOR PRIORIDAD
+
+			if (datos->ack == N - 1)
+			{
+				if (datos->cont_prioridades[pagos_anulaciones] != 0)
+				{
+					printf("[PAGOS / ANULACIONES] Concediendo acceso a SC\n");
+					sem_post(sem_name_paso_pagos_anulaciones);
+				}
+				else if (datos->cont_prioridades[reservas] != 0)
+				{
+					printf("[RESERVAS] Concediendo acceso a SC\n");
+					sem_post(sem_name_paso_reservas);
+				}
+				else if (datos->cont_prioridades[administracion] != 0)
+				{
+					printf("[ADMINISTRACIÓN] Concediendo acceso a SC\n");
+					sem_post(sem_name_paso_administracion);
+				}
+				else if (datos->cont_prioridades[consultas] != 0)
+				{
+					printf("[CONSULTAS] Concediendo acceso a SC\n");
+					sem_post(sem_name_paso_consulta);
+				}
+				datos->ack = 0;
+				printf("Esperando por mensajes...\n");
+			}
 		}
-		
-		}
-		}
-	
+		printf("\n\n\n");
+	}
+}

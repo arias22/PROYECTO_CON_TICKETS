@@ -13,7 +13,6 @@
 #include <signal.h>
 
 int posicionv;
-#define SIZE 50
 #define pagos_anulaciones 0
 #define reservas 1
 #define administracion 2
@@ -29,32 +28,22 @@ typedef struct datos_comp{
 	int max_ticket;
 	//añadidas
 	int dentro;
+	int prioridad_request;
 	int procesos;
 	int primero;
-	int ultimo;
-	int contador_paso_1;
-	int contador_paso_2;
-	int estado_anterior;
-	int id_pid_pend[100];
 	int cont_prioridades[4];
 	int prioridad_procesos[100];
 	int ack;
-	int consultas_activas;
 	int espera;
+	int consultas_dentro;
 }datos_comp;
 	
 struct msg{
-	long mtype;
-	int mi_ticket;
-	int mi_pid;
-	int mi_id;
-	char text[100];
-	int id_nodo;
-	int ack;
-	int prioridad;
-	int cancelar;
-	int consulta;
-	int fin_consultas;
+	long mtype;                                          //TIPO DE MENSAJE
+	int mi_ticket;										 //TICKET MENSAJE
+	int mi_id;										     //ID NODO
+	int tipo_mensaje;									 //TIPO DEL MENSAJE   '0' ===> REQUEST         '1' ======> ACK
+	int prioridad;										 //PRIORIDAD MENSAJE 
 }mensaje;
 
 
@@ -71,27 +60,36 @@ struct msg{
     exit(0);
 }
 
-pid_t getpid(void);
 int main(int argc,char *argv[]) {
+
+//--------------------------ctrl+c----------------------------
+
+
 struct sigaction ss;
 ss.sa_handler = handle_sigint;
 ss.sa_flags = 0;
 sigaction(2,&ss,NULL);
 
+
+//--------------------------FIN ctrl+c----------------------------
+
+
+
 	//----------VARIABLES PROPIAS-------------------------------
-	int i=0;
-	int posicion=atoi(argv[1]);
-	posicionv = posicion;
-	int N = atoi(argv[2]);
-	int prioridad=atoi(argv[3]);
-	int id_nodos=1235+posicion;
-	int buzon=getpid();
+	int posicion=atoi(argv[1]);													//POSICION DEL NODO
+	posicionv = posicion;														//"" ""
+	int N = atoi(argv[2]);														//NUMERO NODOS
+	int prioridad=atoi(argv[3]);												//PRIORIDAD DEL PROCESO
+	int id_nodos=1235+posicion;													//ID DEL NODO	
+
+	char array_prioridades[4][20] = {"Pagos&Anulaciones","Reservas", "Administración","Consultas"};
+	//DE APOYO						
 	int anteriores;
-	int mayor=0;
+	int mayor=0;	
 	int contadores = 0;
 	int max_prioridad=0;
-	char nombres_prioridades[][30]={"PAGOS/ANULACIONES","RESERVAS","ADMINISTRACION","CONSULTAS"};
 	
+
 	 if (argc != 4){
 		printf("formato incorrecto: ./v1_main posicion N prioridad\n");
 		exit(-1);
@@ -155,6 +153,7 @@ sigaction(2,&ss,NULL);
 	}
 
 
+
 	char name_paso[50];
 	sprintf(name_paso, "/MUTEXPASO%s", argv[1]);
 	sem_t *sem_name_paso;
@@ -212,96 +211,56 @@ sigaction(2,&ss,NULL);
 	datos->mi_id=id_nodos;
 	datos->mi_ticket=0;
 	datos->quiero=0;
-	for(int i=0;i<N;i++){
-		datos->id_nodos_pend[i]=0;
-	}
+	
+	// for(int i=0;i<N;i++){
+	// 	datos->id_nodos_pend[i]=0;
+	// }
+
 	datos->num_pend=0;
 	datos->max_ticket=0;
-	datos->procesos++;
-	mensaje.ack=0;
-	mensaje.prioridad=prioridad;
 
+
+	datos->procesos++;
+	mensaje.prioridad=prioridad;
 	mensaje.mi_ticket=0;
 	
-	printf("Mi PID %d\n",getpid());
 	printf("Numero de procesos %d\n",datos->procesos);
-	printf("PROCESO %s\n",nombres_prioridades[prioridad]);
 
 	//-------------------FIN INICIALIZACION DE LAS VARIABLES COMPARTIDAS----------------------------------
 
 
 	//-----------------------------INICIO PROGRAMA--------------------------------------------------------
 
-
+	printf("SOY UN PROCESO DE TIPO %s DEL NODO %d\n",array_prioridades[prioridad],id_nodos);
 
 	while (1) { 
+
+
+
 		// Sección no crítica
 		printf("Esperando para entrar en la Sección Critica\n");
 		getchar();
 		// Sección crítica
 	 	printf("Quiero entrar en la Sección Critica\n");
-
-	 	sem_wait(sem_mutex);
-		datos->quiero = 1;
-		datos->espera++;
-		datos->mi_ticket = datos->max_ticket + 1;								// GENERACIÓN DE UN TICKET MAYOR AL ANTERIOR
-		sem_post(sem_mutex);
+	 	
 		
-		mensaje.mi_ticket=datos->mi_ticket;
-		printf("ticket origen %d\n",mensaje.mi_ticket);
-		mensaje.mi_pid=getpid();
-		mensaje.mi_id=id_nodos;
+
+	 
+		datos->quiero = datos->quiero +1;;													//INDICAS QUE QUIERES ENTRAR
+		datos->espera++;														//INDICAS QIE ESTAS DENTRO
+		datos->mi_ticket = datos->max_ticket + 1; 								// GENERACIÓN DE UN TICKET MAYOR AL ANTERIOR
+
+
+
+
 		
-		if(datos->consultas_activas==1 && prioridad!=consultas){
-				datos->consultas_activas=0;
-				for (i = 0; i <=N-1; i++){
-					
-					
-						mensaje.ack = 0;
-						mensaje.cancelar=0;
-						mensaje.fin_consultas=1;
-						mensaje.consulta=0;
-						mensaje.mtype=1235+i;
-						mensaje.mi_id=id_nodos;
-						mensaje.prioridad=prioridad;
-						mensaje.mi_pid=getpid();
-						
-
-						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-						
-						printf("[FIN CONSULTAS] enviado a %ld\n",mensaje.mtype);
-					
-					
-				}
-
-				for (i = 0; i <=N-1; i++){
-
-							if(1235+i!=id_nodos){
-							printf("AQJI\n");
-							mensaje.ack = 0;
-							mensaje.cancelar=0;
-							mensaje.fin_consultas=0;
-							mensaje.consulta=0;
-								mensaje.mtype=1235+i;
-								mensaje.mi_pid=getpid();
-								mensaje.prioridad=prioridad;
-								
-
-								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
-								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
-					
-							}
-					}
-
-				datos->primero=1;
-		}
+	
+		
+		
 
 
 
-		//COMPROBAMOS SI EN MI NODO SI HA HABIDO ALGUN REQUEST DE UN PROCESO DE MENOR PRIORIDAD QUE YO
-					//SI ES AFIRMATIVO ENTONCES CANCELO EL REQUEST ANTERIOR Y ENVIO EL MÍO
-					//LAS PRIORIDADES VAN AL REVÉS (1 MÁS PRIORITARIO QUE 5)
+		//COMPRUEBAS SI HAY EN ALGUNA COLA UN PROCESO DE MAYOR DE PRIORIDAD Y LOS GUARDAS EN "max_prioridad"
 
 		if(datos->cont_prioridades[pagos_anulaciones]!=0){
 						max_prioridad=pagos_anulaciones;
@@ -312,232 +271,137 @@ sigaction(2,&ss,NULL);
 			}else if (datos->cont_prioridades[consultas]!=0){
 						max_prioridad=consultas;
 		}
+
+
 		
-		if (max_prioridad>prioridad){
-				max_prioridad=1;
-		} else max_prioridad=0;
+		//ENVIAS TU REQUEST SI SE CUMPLE EL IF
 
 
-		// IF PARA ENVIAR REQUEST 
+		if(datos->primero==0 || prioridad<max_prioridad){
 
 
-		if(datos->consultas_activas==0){
-				if((datos->primero==0 || max_prioridad==1) && datos->dentro==0){
 
-								
-				//IF PARA ENVIAR CANCELACIONES
+			//ENVIAMOS REQUEST QUE SIRVE PARA CANCELAR EN EL CASO QUE HUBIERA QUE CANCELAR
 
-				if(datos->primero!=0  && max_prioridad==1){
-					for (i = 0; i <=N-1; i++){
-						if(1235+i!=id_nodos){
-						
-							mensaje.ack = 0;
-							mensaje.cancelar = 1;
-							mensaje.mtype=1235+i;
-							mensaje.mi_pid=getpid();
+			datos->ack=0;
 
-							msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-							
-							printf("[CANCELACIÓN] enviado a %ld\n",mensaje.mtype);
-						
-						}
-					}
-					datos->ack=0;
+			for (int i = 0; i <=N-1; i++){
+				if(1235+i!=id_nodos){
+
+					mensaje.mtype=1235+i;										//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+					mensaje.mi_id=id_nodos;										//INIDICA TU NODO
+					mensaje.prioridad=prioridad;								//INDICA TU PRIORIDAD
+					mensaje.tipo_mensaje = 0;									//INDICA EL TIPO DE MENSAJE
+					mensaje.mi_ticket=datos->mi_ticket;							//ENVIAS EL MENSAJE
+
+
+					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+					datos->prioridad_request = prioridad;
+					printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+				
 				}
-
-				//ENVIAMOS REQUEST 
-
-
-
-				for (i = 0; i <=N-1; i++){
-					if(1235+i!=id_nodos){
-					
-						mensaje.ack = 0;
-						mensaje.cancelar=0;
-						mensaje.mtype=1235+i;
-						mensaje.mi_id=id_nodos;
-						mensaje.prioridad=prioridad;
-						mensaje.mi_pid=getpid();
-						
-
-						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-						
-						printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
-					
-					}
-				}
-				datos->primero=1;
-				mayor=0;
 			}
+			datos->primero=1;
 			
-			
-
-
-			//BUCLE EN EL QUE ESPERAMOS EN LA COLA QUE NOS CORRESPONDE 
-
-			while(1){
-
-
-				//COLA PAGOS & ANULACIONES
-
-				if(prioridad==pagos_anulaciones){
-					printf("Semaforo pagos y anulaciones\n");
-					datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] + 1 ;
-					mayor=0;
-					sem_wait(sem_name_paso_pagos_anulaciones);
-					datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] -1 ;
-					
-
-				}
-				
-				//COLA RESERVAS 
-				
-				
-				else if(prioridad==reservas){
-					printf("Semaforo reservas\n");
-					datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] + 1 ;
-					mayor=0;
-					sem_wait(sem_name_paso_reservas);
-					printf("AQUI\n");
-					datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] - 1 ;
-				}
-				
-				
-				//COLA ADMINISTRACION
-				
-				
-				else if(prioridad==administracion){
-					printf("Semaforo administración\n");
-					datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] + 1 ;
-					mayor=0;
-					sem_wait(sem_name_paso_administracion);
-					printf("AQUI\n");
-					datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] - 1 ;
-				}
-				
-				
-				//COLA CONSULTAS 
-				
-				
-				
-				else{
-						printf("Semaforo consultas\n");
-						datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;
-						mayor=0;
-						sem_wait(sem_name_paso_consulta);
-						printf("AQUI\n");
-						datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;
-						
-				}
-
-
-
-				//VEMOS SI HAY UN PROCESO DE MAYOR PRIORIDAD PENDIENTE DE ATENDER 
-
-				for (i = 0; i <datos->num_pend; i++){
-						if(datos->prioridad_procesos[i]<prioridad){
-							mayor=1;
-							break;
-						}
-				}
-
-				//SI LO HAY ENVIAMOS ACK A TODOS LOS PENDIENTES CANCELAMOS LA REQUEST ACTUAL Y ENVIAMOS OTRO REQUEST
-
-				if(mayor==1){
-						
-
-
-					//ENVÍO ACKS
-
-					for (i = 0; i <datos->num_pend; i++){
-						mensaje.ack = 1;
-						mensaje.mtype=datos->id_nodos_pend[i];
-						mensaje.mi_id=id_nodos;
-						if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
-						
-						printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
-					}
-
-
-					datos->num_pend = 0; 
-					mayor=0;	
-					contadores = 0;
-					printf("Todos los OK pendientes enviados\n");
-
-					//ENVIO PETICION CANCELACIÓN
-
-					for (i = 0; i <=N-1; i++){
-						if(1235+i!=id_nodos){
-							
-							mensaje.ack = 0;
-							mensaje.cancelar = 1;
-							mensaje.mtype=1235+i;
-							mensaje.mi_pid=getpid();
-
-							msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
-							printf("[CANCELACIÓN] enviado a %ld\n",mensaje.mtype);
-							
-							}
-					}
-					
-					//ENVIO NUEVO REQUEST
-
-					for (i = 0; i <=N-1; i++){
-						if(1235+i!=id_nodos){
-							
-							mensaje.ack = 0;
-							mensaje.cancelar=0;
-							mensaje.mtype=1235+i;
-							mensaje.mi_id=id_nodos;
-							mensaje.prioridad=prioridad;
-							mensaje.mi_pid=getpid();
-								
-
-							msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
-							printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
-							
-							}
-					}
-				}else{break;}	
-			}
-
-
-
-			printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
-		
 
 		}
+
+
+	//-----------------------------------------COLAS--------------------------------------------------
+
+		
+
+
+			//COLA PAGOS & ANULACIONES
+
+			if(prioridad==pagos_anulaciones){
+				printf("Semaforo pagos y anulaciones\n");
+				datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] + 1 ;			//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+				
+				sem_wait(sem_name_paso_pagos_anulaciones);
+				
+				datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] -1 ;			//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+				
+
+			}
+			
+			//COLA RESERVAS 
+			
+			
+			if(prioridad==reservas){
+				printf("Semaforo reservas\n");
+				datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] + 1 ;								//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+
+				sem_wait(sem_name_paso_reservas);
+
+				datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] - 1 ;								//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+			}
+			
+			
+			//COLA ADMINISTRACION
+			
+			
+			if(prioridad==administracion){
+				printf("Semaforo administración\n");
+				datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] + 1 ;					//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+
+				sem_wait(sem_name_paso_administracion);
+
+				datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] - 1 ;					//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+			}
+			
+			
+			//COLA CONSULTAS 
+			
+			
+			
+			if(prioridad==consultas){
+				printf("Semaforo consultas\n");
+				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;							//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+
+				sem_wait(sem_name_paso_consulta);
+
+				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;							//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+			}
+
+
+
+
+
+		//-----------------------------------------FIN COLAS--------------------------------------------------
+
+
+		
+
+		
+			
+
+
+		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
+		
+			datos->espera--;
+
 		
 		//ENTRADA  SECCIÓN CRÍTICA 
-		datos->dentro++;
-		if(prioridad==consultas && datos->consultas_activas==0){
-			datos->consultas_activas=1;
-			for (i = 0; i <=N-1; i++){
-							
-							
-								mensaje.ack = 0;
-								mensaje.cancelar = 0;
-								mensaje.consulta=1;
-								mensaje.mtype=1235+i;
-								mensaje.mi_pid=getpid();
-								mensaje.prioridad=consultas;
-								mensaje.mtype = 1235+i;
 
-								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
-								printf("[CONSULTAS] enviado a %ld\n",mensaje.mtype);
-					
-							
-					}
-		}
+
+
+
+
 		printf("En la Seccion Crítica\n");
-		//printf("Dentro %d\n",datos->dentro);
+		
+		
+
+		datos->dentro = 1;
 		
 		getchar();
 		
 		printf("Saliendo de la sección crítica...\n");
+
+
+
+
+
 		
 		//SALIDA SECCIÓN CRÍTICA 
 
@@ -546,11 +410,11 @@ sigaction(2,&ss,NULL);
 
 
 		sem_wait(sem_mutex2);
-		datos->quiero=0;
-		datos->dentro--;
-		datos->espera--;
+		datos->quiero = datos->quiero -1;
+		datos->dentro = 0;
+	
 		sem_post(sem_mutex2);
-		
+
 
 		//COMPARAMOS PRIORIDADES DE PROCESOS DE OTROS NODOS CON LOS NUESTROS QUE ESTÁN ESPERANDO
 						//CASO TENEMOS ALGUNO DE PRIORIDAD MAYOR ESPERANDO  ======> 
@@ -574,8 +438,8 @@ sigaction(2,&ss,NULL);
 
 		//SI ENCONTRAMOS UN PROCESO DE MAYOR PRIORIDAD ENTRE LAS PENDIENTES MARCAMOS mayor COMO 1
 
-		for (i = 0; i <datos->num_pend; i++){
-				if(max_prioridad>datos->prioridad_procesos[i]){
+		for (int i = 0; i <N-1; i++){
+				if(max_prioridad>datos->prioridad_procesos[i] && datos->id_nodos_pend[i]!=0){
 					mayor=1;
 					break;
 				}
@@ -591,118 +455,117 @@ sigaction(2,&ss,NULL);
 		//SI O BIEN LAS COLAS ESTÁN VACÍA O ENCONTRAMOS EN OTRO NODO OTRO PROCESO DE PRIORIDAD MAYOR  EJECUTAMOS EL IF
 
 		if(mayor==1 || contadores==4 ){
-
-			if(datos->dentro==0 && prioridad==consultas){
-				for (i = 0; i <datos->num_pend; i++){
-				mensaje.ack = 1;
-				mensaje.mtype=datos->id_nodos_pend[i];
-				if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
-				printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
-				}
-
-
-
-
-				datos->num_pend = 0; 
-				mayor=0;	
-				contadores = 0;
-				printf("Todos los OK pendientes enviados\n");
-			
-
-			}else if(prioridad!=consultas){
-				for (i = 0; i <datos->num_pend; i++){
-				mensaje.ack = 1;
-				mensaje.mtype=datos->id_nodos_pend[i];
-				if(datos->id_nodos_pend[i]!=0) msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
-				
-				printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
-				}
-
-
-
-
-				datos->num_pend = 0; 
-				mayor=0;	
-				contadores = 0;
-				printf("Todos los OK pendientes enviados\n");
-			
-			}
-			
 			//ENVIAMOS ACK PENDIENTES
+
 		
+			for (int i = 0; i <N; i++){
+					printf("EL NODO %d TIENE PRIORIDAD %d\n",datos->id_nodos_pend[i],datos->prioridad_procesos[i]);
+									
+					mensaje.mi_id=id_nodos;										//INIDICA TU NODO
+
+					mensaje.tipo_mensaje = 1;									//INDICA EL TIPO DE MENSAJE
+
+				    mensaje.mtype=datos->id_nodos_pend[i];						//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+
+					mensaje.prioridad = datos->prioridad_procesos[i];			//ENVÍAS LA PRIORIDAD DEL REQUEST A QUIEN VA DIRIGIDO EL ACK
+
+				if(datos->id_nodos_pend[i]!=0){
+					 msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
+				
+				    printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
+				}
+
+			}
+				//BORRAMOS LOS ACK PENDIENTES
+
+				for (int i = 0; i <N; i++){
+						datos->id_nodos_pend[i] = 0;
+						datos->prioridad_procesos[i] = 0;
+
+				}
+
+
 			
+
+
+
+				mayor=0;	
+				contadores = 0;
+				
+				printf("Todos los OK pendientes enviados\n");
+			
+
 
 				//ENCUENTRAS EL PROCESO EN ESPERA CON MAYOR PRIORIDAD Y HACES UN REQUEST POR ÉL
+				//ACTUALIZO EL TICKET
+				datos->mi_ticket = datos->max_ticket + 1;
 
 				if(datos->cont_prioridades[pagos_anulaciones]!=0){
-					for (i = 0; i <=N-1; i++){
+					for (int i = 0; i <=N-1; i++){
 							if(1235+i!=id_nodos){
 							
-								mensaje.ack = 0;
-								mensaje.cancelar = 0;
-								mensaje.mtype=1235+i;
-								mensaje.mi_pid=getpid();
-								mensaje.prioridad=pagos_anulaciones;
-								mensaje.mtype = 1235+i;
+							mensaje.mtype=1235+i;										//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+							mensaje.mi_id=id_nodos;										//INIDICA TU NODO
+							mensaje.prioridad=pagos_anulaciones;						//INDICA TU PRIORIDAD
+							mensaje.tipo_mensaje = 0;									//INDICA EL TIPO DE MENSAJE
+							mensaje.mi_ticket=datos->mi_ticket;							//ENVIAS EL MENSAJE
+
 
 								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
+								datos->prioridad_request = pagos_anulaciones;
 								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
 					
 							}
 					}
 	
 				}else if(datos->cont_prioridades[reservas]!=0){
-					for (i = 0; i <=N-1; i++){
+					for (int i = 0; i <=N-1; i++){
 							if(1235+i!=id_nodos){
 							
-								mensaje.ack = 0;
-								mensaje.cancelar = 0;
-								mensaje.mtype=1235+i;
-								mensaje.mi_pid=getpid();
-								mensaje.prioridad=reservas;
-								mensaje.mtype = 1235+i;
+								mensaje.mtype=1235+i;										//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+								mensaje.mi_id=id_nodos;										//INIDICA TU NODO
+								mensaje.prioridad=reservas;									//INDICA TU PRIORIDAD
+								mensaje.tipo_mensaje = 0;									//INDICA EL TIPO DE MENSAJE
+								mensaje.mi_ticket=datos->mi_ticket;							//ENVIAS EL MENSAJE
 
 								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
+								datos->prioridad_request = reservas;
 								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
 					
 							}
 					}
 	
 				}else if (datos->cont_prioridades[administracion]!=0){
-					for (i = 0; i <=N-1; i++){
+					for (int i = 0; i <=N-1; i++){
 							if(1235+i!=id_nodos){
 							
-								mensaje.ack = 0;
-								mensaje.cancelar = 0;
-								mensaje.mtype=1235+i;
-								mensaje.mi_pid=getpid();
-								mensaje.mtype = 1235+i;
-								mensaje.prioridad=administracion;
+								mensaje.mtype=1235+i;										//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+								mensaje.mi_id=id_nodos;										//INIDICA TU NODO
+								mensaje.prioridad=administracion;							//INDICA TU PRIORIDAD
+								mensaje.tipo_mensaje = 0;									//INDICA EL TIPO DE MENSAJE
+								mensaje.mi_ticket=datos->mi_ticket;							//ENVIAS EL MENSAJE
 
 								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
+								datos->prioridad_request = administracion;
 								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
 					
 							}
 					}
 	
 				}else if(datos->cont_prioridades[consultas]!=0){
-					for (i = 0; i <=N-1; i++){
+					for (int i = 0; i <=N-1; i++){
 							if(1235+i!=id_nodos){
 							
-								mensaje.ack = 0;
-								mensaje.cancelar = 0;
-								mensaje.mtype=1235+i;
-								mensaje.mi_pid=getpid();
-								mensaje.mtype = 1235+i;
-								mensaje.prioridad=consultas;
+								mensaje.mtype=1235+i;										//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+								mensaje.mi_id=id_nodos;										//INIDICA TU NODO
+								mensaje.prioridad=consultas;						//INDICA TU PRIORIDAD
+								mensaje.tipo_mensaje = 0;									//INDICA EL TIPO DE MENSAJE
+								mensaje.mi_ticket=datos->mi_ticket;							//ENVIAS EL MENSAJE
 
 								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
-								printf("[REQUEST]enviado a %ld\n",mensaje.mtype);
+								datos->prioridad_request = consultas;
+								printf("[[REQUEST] ]enviado a %ld\n",mensaje.mtype);
 					
 							}
 					}
@@ -727,7 +590,6 @@ sigaction(2,&ss,NULL);
 		
 	
 
-		//ARREGLAR !!!!!!!!!!!!!!!!!!!!!
 
 		for (int i = 0; i < 4; i++){
 			if(datos->cont_prioridades[i]==0)  contadores++;
@@ -735,9 +597,10 @@ sigaction(2,&ss,NULL);
 		if(contadores==4){
 	
 			datos->primero=0;
-			contadores = 0;
+			
 		}
-		
+		contadores = 0;
+
 		printf("Fuera de la Sección Critica\n");		
 		
 	}
