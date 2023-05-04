@@ -35,7 +35,8 @@ typedef struct datos_comp{
 	int prioridad_procesos[100];
 	int ack;
 	int espera;
-	int consultas_dentro;
+	int numero_consultas;
+	int grifo;
 }datos_comp;
 	
 struct msg{
@@ -239,8 +240,11 @@ sigaction(2,&ss,NULL);
 
 		// Sección no crítica
 		printf("Esperando para entrar en la Sección Critica\n");
+
+
 		getchar();
-		// Sección crítica
+
+
 	 	printf("Quiero entrar en la Sección Critica\n");
 	 	
 		
@@ -254,8 +258,11 @@ sigaction(2,&ss,NULL);
 
 
 		
-	
-		
+		//SI LLEGA UN PROCESO EN EL MISMO NODO CON MAYOR PRIORIDAD DE CONSULTAS Y EL GRIFO ESTÁ ABIERTO CERRAMOS EL GRIFO
+
+		if(prioridad <consultas && datos->grifo == 1){
+			datos->grifo = 0;
+		}
 		
 
 
@@ -356,12 +363,30 @@ sigaction(2,&ss,NULL);
 			
 			
 			if(prioridad==consultas){
+				if(datos->grifo != 1){
 				printf("Semaforo consultas\n");
 				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;							//ACTUALIZAS NUMERO PROCESOS EN LA COLA
 
 				sem_wait(sem_name_paso_consulta);
 
 				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;							//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+
+				}
+
+
+				if(datos->grifo == 0) {
+					datos->grifo = 1;
+					datos -> grifo = 1;
+				int x = datos->cont_prioridades[consultas];
+				while(x!=0){
+					sem_post(sem_name_paso_consulta);
+					x--;
+				}
+				}
+				datos->numero_consultas = datos->numero_consultas +1;
+
+
+
 			}
 
 
@@ -391,14 +416,15 @@ sigaction(2,&ss,NULL);
 		printf("En la Seccion Crítica\n");
 		
 		
-
+		
 		datos->dentro = 1;
 		
 		getchar();
 		
 		printf("Saliendo de la sección crítica...\n");
 
-
+		datos->numero_consultas = datos->numero_consultas -1;
+		if(datos->numero_consultas == 0) datos->grifo = 0;
 
 
 

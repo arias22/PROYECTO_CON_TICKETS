@@ -37,9 +37,11 @@ typedef struct datos_comp
 	int primero;
 	int cont_prioridades[4];
 	int prioridad_procesos[100];
+	int tickets_procesos[100];
 	int ack;
 	int espera;
-	int consultas_dentro;
+	int numero_consultas;
+	int grifo;
 } datos_comp;
 
 struct msg
@@ -281,6 +283,27 @@ int main(int argc, char *argv[])
 
 		if (mensaje.tipo_mensaje == 0)
 		{
+
+
+			//SI NOS LLEGA UN REQUEST DE MAYOR PRIORIDAD CUANDO HAY CONCURRENCIA DE CONSULTAS CIERRAS EL GRIFO
+
+			if(datos->grifo==1 && mensaje.prioridad<consultas) datos->grifo = 0;
+
+			//CASO CONCURRENCIA CONSULTAS =====> TIENES CONSULTAS EN SC Y RECIBES CONSULTAS
+
+			if(mensaje.prioridad == consultas && datos->prioridad_request == consultas){
+				printf("Envio OK a buzon %d\n", id_nodo_origen);
+				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+				mensaje.mi_id = buzon;			// INIDICA TU NODO
+				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
+
+				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+			}
+
+
+
+
+
 			printf("Me llegó un mensaje de %d con el ticket %i y prioridad %d\n", id_nodo_origen, ticket_origen, max_prioridad);
 
 			sem_wait(sem_mutex);
@@ -313,7 +336,7 @@ int main(int argc, char *argv[])
 				datos->mi_ticket = datos->max_ticket + 1;
 				for (int i = 0; i <= N - 1; i++)
 				{
-					if (1235 + i != buzon)
+					if (1235 + i != buzon) {
 
 
 
@@ -327,6 +350,7 @@ int main(int argc, char *argv[])
 
 						msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 						printf("[REQUEST] enviado a %ld\n", mensaje.mtype);
+					}
 					}
 				}
 			
@@ -344,11 +368,11 @@ int main(int argc, char *argv[])
 			// CASO AÑADIR A PENDIENTES
 			else
 			{
-
+				datos->tickets_procesos[id_nodo_origen - 1235] = ticket_origen;               //TAMBIÉN GUARDAMOS EL TICKET
 				datos->id_nodos_pend[id_nodo_origen - 1235] = id_nodo_origen; // id_nodo_origen -1235 = posicion del nodo
 				datos->prioridad_procesos[id_nodo_origen - 1235] = prioridad_mensaje;
 				printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[id_nodo_origen - 1235], datos->prioridad_procesos[id_nodo_origen - 1235]);
-
+				
 				int ctr = 0;
 
 				for (int i = 0; i < N; i++)
@@ -365,14 +389,20 @@ int main(int argc, char *argv[])
 			}
 
 			sem_post(sem_mutex);
-		}else if (mensaje.tipo_mensaje == 1) // CASO ACK
+		}
+		
+		
+		
+		
+		
+		else if (mensaje.tipo_mensaje == 1) // CASO ACK
 		{
 
 			printf("OK recibido de %d\n", id_nodo_origen);
 			printf("Prioridad destinatario %d\n", mensaje.prioridad);
 
-			if (mensaje.prioridad == datos->prioridad_request)
-				datos->ack++; // SOLO SUMAS LOS ACKS SI TE LLEGAN DE LA PRIORIDAD CORRESPONDIENTE
+			if (mensaje.prioridad == datos->prioridad_request && datos->mi_ticket== ticket_origen)
+				datos->ack++; // SOLO SUMAS LOS ACKS SI TE LLEGAN DE LA PRIORIDAD CORRESPONDIENTE Y EL MISMO TICKET CON EL QUE SE ENVIÓ
 
 			printf("ack %d\n", datos->ack);
 
