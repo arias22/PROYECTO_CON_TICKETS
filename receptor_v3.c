@@ -26,7 +26,6 @@ typedef struct datos_comp
 	int mi_ticket;
 	int mi_id;
 	int id_nodos_pend[100];
-	int num_pend;
 	int quiero;
 	int max_ticket;
 	// añadidas
@@ -38,7 +37,6 @@ typedef struct datos_comp
 	int prioridad_procesos[100];
 	int tickets_procesos[100];
 	int ack;
-	int espera;
 	int numero_consultas;
 	int grifo;
 } datos_comp;
@@ -107,7 +105,69 @@ void handle_sigint(int signal)
 	if (sem_unlink(name_paso_pagos_anulaciones) == -1)
 		printf("NO SE DESTRUYO BIEN MUTEXPASOPAGOSANULACIONES\n");
 
+	char name_var_mi_ticket[50];
+	sprintf(name_var_mi_ticket, "/name_var_mi_ticket%d", posicionv);
+	if (sem_unlink(name_var_mi_ticket) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_mi_ticket\n");
+
+	char name_var_mi_id[50];
+	sprintf(name_var_mi_id, "/name_var_mi_id%d", posicionv);
+	if (sem_unlink(name_var_mi_id) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_mi_id\n");
+
+
+	char name_var_id_nodos_pend[50];
+	sprintf(name_var_id_nodos_pend, "/name_var_id_nodos_pend%d", posicionv);
+	if (sem_unlink(name_var_id_nodos_pend) == -1)
+		printf("NO SE DESTRUYO BIEN MUTEXPASOPAGOSANULACIONES\n");
+
+	char name_var_quiero[50];
+	sprintf(name_var_quiero, "/name_var_quiero%d", posicionv);
+	if (sem_unlink(name_var_quiero) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_mi_ticket\n");
+
+	char name_var_dentro[50];
+	sprintf(name_var_dentro, "/name_var_dentro%d", posicionv);
+	if (sem_unlink(name_var_dentro) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_dentro\n");
+
+
+	char name_var_prioridad_request[50];
+	sprintf(name_var_prioridad_request, "/name_var_prioridad_request%d", posicionv);
+	if (sem_unlink(name_var_prioridad_request) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_prioridad_request\n");
+
+
+	char name_var_procesos[50];
+	sprintf(name_var_procesos, "/name_var_procesos%d", posicionv);
+	if (sem_unlink(name_var_procesos) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_procesos\n");
+
+	char name_var_ack[50];
+	sprintf(name_var_ack, "/name_var_ack%d", posicionv);
+	if (sem_unlink(name_var_ack) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_ack\n");
+
+	char name_var_numero_consultas[50];
+	sprintf(name_var_numero_consultas, "/name_var_numero_consultas%d", posicionv);
+	if (sem_unlink(name_var_numero_consultas) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_numero_consultas\n");
+
+
+	char name_var_grifo[50];
+	sprintf(name_var_grifo, "/name_var_grifo%d", posicionv);
+	if (sem_unlink(name_var_grifo) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_grifo\n");
+
+
+
+
+
+
+
 	exit(0);
+
+	
 }
 
 int main(int argc, char *argv[])
@@ -190,7 +250,7 @@ int main(int argc, char *argv[])
 	 	datos->id_nodos_pend[i]=0;
 	 }
 
-	datos->num_pend=0;
+
 	datos->max_ticket=0;
 
 
@@ -266,6 +326,148 @@ int main(int argc, char *argv[])
 		perror("Failed to open semphore for empty");
 		exit(-1);
 	}
+
+	char name_var_mi_ticket[50];
+	sprintf(name_var_mi_ticket, "/name_var_mi_ticket%s", argv[1]);
+	sem_t *sem_var_mi_ticket;
+	sem_var_mi_ticket = sem_open(name_var_mi_ticket, O_CREAT, 0777, 0);
+	if (sem_var_mi_ticket == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_mi_id[50];
+	sprintf(name_var_mi_id, "/name_var_mi_id%s", argv[1]);
+	sem_t *sem_var_mi_id;
+	sem_var_mi_id = sem_open(name_var_mi_id, O_CREAT, 0777, 0);
+	if (sem_var_mi_id == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_id_nodos_pend[50];
+	sprintf(name_var_id_nodos_pend, "/name_var_id_nodos_pend%s", argv[1]);
+	sem_t *sem_var_id_nodos_pend;
+	sem_var_id_nodos_pend = sem_open(name_var_id_nodos_pend, O_CREAT, 0777, 0);
+	if (sem_var_mi_ticket == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+
+	char name_var_quiero[50];
+	sprintf(name_var_quiero, "/name_var_quiero%s", argv[1]);
+	sem_t *sem_var_quiero;
+	sem_var_quiero = sem_open(name_var_quiero, O_CREAT, 0777, 0);
+	if (sem_var_quiero == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_dentro[50];
+	sprintf(name_var_dentro, "/name_var_dentro%s", argv[1]);
+	sem_t *sem_var_dentro;
+	sem_var_dentro = sem_open(name_var_dentro, O_CREAT, 0777, 0);
+	if (sem_var_dentro == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_prioridad_request[50];
+	sprintf(name_var_prioridad_request, "/name_var_prioridad_request%s", argv[1]);
+	sem_t *sem_var_prioridad_request;
+	sem_var_prioridad_request = sem_open(name_var_prioridad_request, O_CREAT, 0777, 0);
+	if (sem_var_prioridad_request == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_procesos[50];
+	sprintf(name_var_procesos, "/name_var_procesos%s", argv[1]);
+	sem_t *sem_var_procesos;
+	sem_var_procesos = sem_open(name_var_procesos, O_CREAT, 0777, 0);
+	if (sem_var_procesos == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_primero[50];
+	sprintf(name_var_primero, "/name_var_primero%s", argv[1]);
+	sem_t *sem_var_primero;
+	sem_var_primero = sem_open(name_var_primero, O_CREAT, 0777, 0);
+	if (sem_var_primero == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_cont_prioridades[50];
+	sprintf(name_var_cont_prioridades, "/name_var_cont_prioridades%s", argv[1]);
+	sem_t *sem_var_cont_prioridades;
+	sem_var_cont_prioridades = sem_open(name_var_cont_prioridades, O_CREAT, 0777, 0);
+	if (sem_var_cont_prioridades == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+	
+	char name_var_prioridad_procesos[50];
+	sprintf(name_var_prioridad_procesos, "/name_var_prioridad_procesos%s", argv[1]);
+	sem_t *sem_var_prioridad_procesos;
+	sem_var_prioridad_procesos = sem_open(name_var_prioridad_procesos, O_CREAT, 0777, 0);
+	if (sem_var_prioridad_procesos == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}	
+	
+	char name_var_tickets_procesos[50];
+	sprintf(name_var_tickets_procesos, "/name_var_tickets_procesos%s", argv[1]);
+	sem_t *sem_var_tickets_procesos;
+	sem_var_tickets_procesos = sem_open(name_var_tickets_procesos, O_CREAT, 0777, 0);
+	if (sem_var_tickets_procesos == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_ack[50];
+	sprintf(name_var_ack, "/name_var_ack%s", argv[1]);
+	sem_t *sem_var_ack;
+	sem_var_ack = sem_open(name_var_ack, O_CREAT, 0777, 0);
+	if (sem_var_ack == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_numero_consultas[50];
+	sprintf(name_var_numero_consultas, "/name_var_numero_consultas%s", argv[1]);
+	sem_t *sem_var_numero_consultas;
+	sem_var_numero_consultas = sem_open(name_var_numero_consultas, O_CREAT, 0777, 0);
+	if (sem_var_numero_consultas == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
+	char name_var_grifo[50];
+	sprintf(name_var_grifo, "/name_var_grifo%s", argv[1]);
+	sem_t *sem_var_grifo;
+	sem_var_grifo = sem_open(name_var_grifo, O_CREAT, 0777, 0);
+	if (sem_var_grifo == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
+
 	printf("Mi ID %d\n", buzon);
 
 	//---------------------------------------DECLARACION SEMÁFOROS----------------------------------------
@@ -320,13 +522,6 @@ int main(int argc, char *argv[])
 				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 			}else{
 
-
-
-
-
-			
-
-		
 
 			datos->max_ticket = MAX(datos->max_ticket, ticket_origen); // compara su ticket con el ticket del que le llego
 
