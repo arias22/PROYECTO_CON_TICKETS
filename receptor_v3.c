@@ -143,16 +143,40 @@ void handle_sigint(int signal)
 	if (sem_unlink(name_var_procesos) == -1)
 		printf("NO SE DESTRUYO BIEN name_var_procesos\n");
 
+
+	char name_var_primero[50];
+	sprintf(name_var_primero, "/name_var_primero%d", posicionv);
+	if (sem_unlink(name_var_primero) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_primero\n");
+
+
+
+	char name_var_cont_prioridades[50];
+	sprintf(name_var_cont_prioridades, "/name_var_cont_prioridades%d", posicionv);
+	if (sem_unlink(name_var_cont_prioridades) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_cont_prioridades\n");
+
+	char name_var_prioridad_procesos[50];
+	sprintf(name_var_prioridad_procesos, "/name_var_prioridad_procesos%d", posicionv);
+	if (sem_unlink(name_var_prioridad_procesos) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_prioridad_procesos\n");
+
+
+	char name_var_tickets_procesos[50];
+	sprintf(name_var_tickets_procesos, "/name_var_tickets_procesos%d", posicionv);
+	if (sem_unlink(name_var_tickets_procesos) == -1)
+		printf("NO SE DESTRUYO BIEN name_var_tickets_procesos\n");
+
 	char name_var_ack[50];
 	sprintf(name_var_ack, "/name_var_ack%d", posicionv);
 	if (sem_unlink(name_var_ack) == -1)
 		printf("NO SE DESTRUYO BIEN name_var_ack\n");
 
-	char name_var_numero_consultas[50];
+
+		char name_var_numero_consultas[50];
 	sprintf(name_var_numero_consultas, "/name_var_numero_consultas%d", posicionv);
 	if (sem_unlink(name_var_numero_consultas) == -1)
 		printf("NO SE DESTRUYO BIEN name_var_numero_consultas\n");
-
 
 	char name_var_grifo[50];
 	sprintf(name_var_grifo, "/name_var_grifo%d", posicionv);
@@ -161,7 +185,7 @@ void handle_sigint(int signal)
 
 
 
-
+	
 
 
 
@@ -330,7 +354,7 @@ int main(int argc, char *argv[])
 	char name_var_mi_ticket[50];
 	sprintf(name_var_mi_ticket, "/name_var_mi_ticket%s", argv[1]);
 	sem_t *sem_var_mi_ticket;
-	sem_var_mi_ticket = sem_open(name_var_mi_ticket, O_CREAT, 0777, 0);
+	sem_var_mi_ticket = sem_open(name_var_mi_ticket, O_CREAT, 0777, 1);
 	if (sem_var_mi_ticket == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -340,7 +364,7 @@ int main(int argc, char *argv[])
 	char name_var_mi_id[50];
 	sprintf(name_var_mi_id, "/name_var_mi_id%s", argv[1]);
 	sem_t *sem_var_mi_id;
-	sem_var_mi_id = sem_open(name_var_mi_id, O_CREAT, 0777, 0);
+	sem_var_mi_id = sem_open(name_var_mi_id, O_CREAT, 0777, 1);
 	if (sem_var_mi_id == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -350,7 +374,7 @@ int main(int argc, char *argv[])
 	char name_var_id_nodos_pend[50];
 	sprintf(name_var_id_nodos_pend, "/name_var_id_nodos_pend%s", argv[1]);
 	sem_t *sem_var_id_nodos_pend;
-	sem_var_id_nodos_pend = sem_open(name_var_id_nodos_pend, O_CREAT, 0777, 0);
+	sem_var_id_nodos_pend = sem_open(name_var_id_nodos_pend, O_CREAT, 0777, 1);
 	if (sem_var_mi_ticket == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -361,7 +385,7 @@ int main(int argc, char *argv[])
 	char name_var_quiero[50];
 	sprintf(name_var_quiero, "/name_var_quiero%s", argv[1]);
 	sem_t *sem_var_quiero;
-	sem_var_quiero = sem_open(name_var_quiero, O_CREAT, 0777, 0);
+	sem_var_quiero = sem_open(name_var_quiero, O_CREAT, 0777, 1);
 	if (sem_var_quiero == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -371,7 +395,7 @@ int main(int argc, char *argv[])
 	char name_var_dentro[50];
 	sprintf(name_var_dentro, "/name_var_dentro%s", argv[1]);
 	sem_t *sem_var_dentro;
-	sem_var_dentro = sem_open(name_var_dentro, O_CREAT, 0777, 0);
+	sem_var_dentro = sem_open(name_var_dentro, O_CREAT, 0777, 1);
 	if (sem_var_dentro == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -381,7 +405,7 @@ int main(int argc, char *argv[])
 	char name_var_prioridad_request[50];
 	sprintf(name_var_prioridad_request, "/name_var_prioridad_request%s", argv[1]);
 	sem_t *sem_var_prioridad_request;
-	sem_var_prioridad_request = sem_open(name_var_prioridad_request, O_CREAT, 0777, 0);
+	sem_var_prioridad_request = sem_open(name_var_prioridad_request, O_CREAT, 0777, 1);
 	if (sem_var_prioridad_request == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -391,7 +415,7 @@ int main(int argc, char *argv[])
 	char name_var_procesos[50];
 	sprintf(name_var_procesos, "/name_var_procesos%s", argv[1]);
 	sem_t *sem_var_procesos;
-	sem_var_procesos = sem_open(name_var_procesos, O_CREAT, 0777, 0);
+	sem_var_procesos = sem_open(name_var_procesos, O_CREAT, 0777, 1);
 	if (sem_var_procesos == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -401,7 +425,7 @@ int main(int argc, char *argv[])
 	char name_var_primero[50];
 	sprintf(name_var_primero, "/name_var_primero%s", argv[1]);
 	sem_t *sem_var_primero;
-	sem_var_primero = sem_open(name_var_primero, O_CREAT, 0777, 0);
+	sem_var_primero = sem_open(name_var_primero, O_CREAT, 0777, 1);
 	if (sem_var_primero == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -411,7 +435,7 @@ int main(int argc, char *argv[])
 	char name_var_cont_prioridades[50];
 	sprintf(name_var_cont_prioridades, "/name_var_cont_prioridades%s", argv[1]);
 	sem_t *sem_var_cont_prioridades;
-	sem_var_cont_prioridades = sem_open(name_var_cont_prioridades, O_CREAT, 0777, 0);
+	sem_var_cont_prioridades = sem_open(name_var_cont_prioridades, O_CREAT, 0777, 1);
 	if (sem_var_cont_prioridades == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -421,7 +445,7 @@ int main(int argc, char *argv[])
 	char name_var_prioridad_procesos[50];
 	sprintf(name_var_prioridad_procesos, "/name_var_prioridad_procesos%s", argv[1]);
 	sem_t *sem_var_prioridad_procesos;
-	sem_var_prioridad_procesos = sem_open(name_var_prioridad_procesos, O_CREAT, 0777, 0);
+	sem_var_prioridad_procesos = sem_open(name_var_prioridad_procesos, O_CREAT, 0777, 1);
 	if (sem_var_prioridad_procesos == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -431,7 +455,7 @@ int main(int argc, char *argv[])
 	char name_var_tickets_procesos[50];
 	sprintf(name_var_tickets_procesos, "/name_var_tickets_procesos%s", argv[1]);
 	sem_t *sem_var_tickets_procesos;
-	sem_var_tickets_procesos = sem_open(name_var_tickets_procesos, O_CREAT, 0777, 0);
+	sem_var_tickets_procesos = sem_open(name_var_tickets_procesos, O_CREAT, 0777, 1);
 	if (sem_var_tickets_procesos == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -441,7 +465,7 @@ int main(int argc, char *argv[])
 	char name_var_ack[50];
 	sprintf(name_var_ack, "/name_var_ack%s", argv[1]);
 	sem_t *sem_var_ack;
-	sem_var_ack = sem_open(name_var_ack, O_CREAT, 0777, 0);
+	sem_var_ack = sem_open(name_var_ack, O_CREAT, 0777, 1);
 	if (sem_var_ack == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -451,7 +475,7 @@ int main(int argc, char *argv[])
 	char name_var_numero_consultas[50];
 	sprintf(name_var_numero_consultas, "/name_var_numero_consultas%s", argv[1]);
 	sem_t *sem_var_numero_consultas;
-	sem_var_numero_consultas = sem_open(name_var_numero_consultas, O_CREAT, 0777, 0);
+	sem_var_numero_consultas = sem_open(name_var_numero_consultas, O_CREAT, 0777, 1);
 	if (sem_var_numero_consultas == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -461,7 +485,7 @@ int main(int argc, char *argv[])
 	char name_var_grifo[50];
 	sprintf(name_var_grifo, "/name_var_grifo%s", argv[1]);
 	sem_t *sem_var_grifo;
-	sem_var_grifo = sem_open(name_var_grifo, O_CREAT, 0777, 0);
+	sem_var_grifo = sem_open(name_var_grifo, O_CREAT, 0777, 1);
 	if (sem_var_grifo == SEM_FAILED)
 	{
 		perror("Failed to open semphore for empty");
@@ -484,7 +508,7 @@ int main(int argc, char *argv[])
 		msgrcv(msqid, &mensaje, sizeof(struct msg), buzon, 0);
 
 		printf("ME LLEGA UN MENSAJE DEL NODO %d CON TIPO DE MENSAJE %d\n", mensaje.mi_id, mensaje.tipo_mensaje);
-
+      
 		ticket_origen = mensaje.mi_ticket;
 		id_nodo_origen = mensaje.mi_id;
 		prioridad_mensaje = mensaje.prioridad;
@@ -495,22 +519,24 @@ int main(int argc, char *argv[])
 
 		if (mensaje.tipo_mensaje == 0)
 		{
-			printf("Me llegó un mensaje de %d con el ticket %i y prioridad %d\n", id_nodo_origen, ticket_origen, max_prioridad);
+			printf("Me llegó un mensaje de %d con el ticket %i y prioridad %d\n", id_nodo_origen, ticket_origen, prioridad_mensaje);
 
 
 
 			//SI NOS LLEGA UN REQUEST DE MAYOR PRIORIDAD CUANDO HAY CONCURRENCIA DE CONSULTAS CIERRAS EL GRIFO
-
+			sem_wait(sem_var_grifo);
 			if(datos->grifo==1 && mensaje.prioridad<consultas) {
 				
 				printf("COMO ME LLEGA UN PROCESO MAS PRIORITARIO QUE CONSULTAS CIERRO GRIFO!!!!!!!!!!!!!!!\n");	
 				datos->grifo = 0;
 			}
-
+			sem_post(sem_var_grifo);
 
 
 			//CASO CONCURRENCIA CONSULTAS =====> SI EL ULTIMO REQUEST ES DE CONSULTAS ENTONCES PUEDES RESPONDER CONSULTAS
 
+
+			sem_wait(sem_var_prioridad_request);
 			if(mensaje.prioridad == consultas && datos->prioridad_request == consultas){
 				printf("ME LLEGA UN REQUEST DE UN CONSULTAS Y COMO TENGO CONSULTAS LE RESPONDO jejejej\n");
 				printf("Envio OK a buzon %d\n", id_nodo_origen);
@@ -520,11 +546,14 @@ int main(int argc, char *argv[])
 				mensaje.mi_ticket= ticket_origen;
 
 				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+				sem_post(sem_var_prioridad_request);
 			}else{
+			sem_post(sem_var_prioridad_request);			
 
 
+			sem_wait(sem_var_mi_ticket);
 			datos->max_ticket = MAX(datos->max_ticket, ticket_origen); // compara su ticket con el ticket del que le llego
-
+			sem_post(sem_var_mi_ticket);
 			// COMPROBAMOS SI ENVIAMOS OK O LO AÑADIMOS A PENDIENTES
 
 			// SI EL REQUEST LLEGA DE MAYOR PRIORIDAD DE LOS QUE ESTÁN EN LA COLA ENTONCES BORRAMOS TODOS LOS ACK
@@ -536,11 +565,20 @@ int main(int argc, char *argv[])
 			printf("MI TICKET:%d\n", datos->mi_ticket);
 			printf("DENTRO:%d\n",datos->dentro);
 
+			sem_wait(sem_var_dentro);
+			sem_wait(sem_var_prioridad_request);
+			sem_wait(sem_var_quiero);
 			if (prioridad_mensaje < datos->prioridad_request && datos->dentro == 0)
 			{
-
+			printf("HAGO PRIMER IF\n");
+			sem_post(sem_var_dentro);
+			sem_post(sem_var_prioridad_request);
+			sem_post(sem_var_quiero);
 				printf("BORRO ACKS\n");
+
+				sem_wait(sem_var_ack);
 				datos->ack = 0;
+				sem_post(sem_var_ack);
 				printf("ENVIO OK AL BUZON  %d PORQUE ME SUPERA EN PRIORIDAD\n", id_nodo_origen);
 				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
 				mensaje.mi_id = buzon;			// INIDICA TU NODO
@@ -550,9 +588,12 @@ int main(int argc, char *argv[])
 				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 
 				//ACTUALIZO EL TICKET
+				sem_wait(sem_var_mi_ticket);
 				datos->mi_ticket = datos->max_ticket + 1;
+				sem_post(sem_var_mi_ticket);
 				printf("VUELVO A PEDIR UN REQUEST\n");
-				for (int i = 0; i <= N - 1; i++)
+				sem_wait(sem_var_prioridad_request);
+				for (int i = 0; i <N ; i++)
 				{
 					if (1235 + i != buzon) {
 
@@ -566,12 +607,16 @@ int main(int argc, char *argv[])
 						printf("[REQUEST] enviado a %ld\n", mensaje.mtype);
 					}
 					}
+				sem_post(sem_var_prioridad_request);
 				}
-			
+			 
 			else if ((!(datos->quiero) || ticket_origen < datos->mi_ticket || (ticket_origen == datos->mi_ticket & (id_nodo_origen < buzon))) && datos->dentro == 0 
 			&&( datos->prioridad_request>mensaje.prioridad || datos->prioridad_request==0) )
 			{
-
+			printf("HAGO SEGUNDO ELSE\n");
+			sem_post(sem_var_quiero);
+			sem_post(sem_var_dentro);
+			sem_post(sem_var_prioridad_request);
 
 				printf("ENVIO OK AL BUZON %d PORQUE TIENE MAYOR PRIORIDAD O BIEN NO TENGO NADA\n", id_nodo_origen);
 				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
@@ -585,19 +630,36 @@ int main(int argc, char *argv[])
 			// CASO AÑADIR A PENDIENTES
 			else
 			{
+			printf("HAGO ULTIMO ELSE\n");
+			sem_post(sem_var_quiero);
+			sem_post(sem_var_dentro);
+			sem_post(sem_var_prioridad_request);
 
+			sem_wait(sem_var_prioridad_procesos);
+			printf("Prioridad del mensaje = %d\n",mensaje.prioridad);
+			printf("Prioridad del ya guardado = %d\n",datos->prioridad_procesos[id_nodo_origen - 1235]);
+			if(mensaje.prioridad<=datos->prioridad_procesos[id_nodo_origen - 1235] || datos->prioridad_procesos[id_nodo_origen - 1235] == 0){
+			sem_post(sem_var_prioridad_procesos);
+	
 				printf("COMO ESTOY EN LA SECCIÓN CRÍTICA SUMO A PENDIENTES EN TODOS LOS CASOS\n");
-
+			sem_wait(sem_var_tickets_procesos);
 				datos->tickets_procesos[id_nodo_origen - 1235] = ticket_origen;               //TAMBIÉN GUARDAMOS EL TICKET
+			sem_post(sem_var_tickets_procesos);
+			sem_wait(sem_var_id_nodos_pend);
 				datos->id_nodos_pend[id_nodo_origen - 1235] = id_nodo_origen; // id_nodo_origen -1235 = posicion del nodo
+			sem_post(sem_var_id_nodos_pend);
+			sem_wait(sem_var_prioridad_procesos);
 				datos->prioridad_procesos[id_nodo_origen - 1235] = prioridad_mensaje;
-				
+			sem_post(sem_var_prioridad_procesos);
+
+			
 				for (int i = 0; i < N; i++)
 				{ if (datos->id_nodos_pend!=0){
     					printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[i], datos->prioridad_procesos[i]);
 				}
 					
 				}
+			}else sem_post(sem_var_prioridad_procesos);
 			}
 			}
 			
@@ -614,16 +676,27 @@ int main(int argc, char *argv[])
 			printf("PRIORIDAD CON QUE ME LLEGA ES %d Y MI PRIORIDAD ES %d\n", mensaje.prioridad,datos->prioridad_request );
 			printf("ME LLEGA CON TICKET %d y MI TICKET ACTUAL ES %d\n",mensaje.mi_ticket, datos->mi_ticket);
 
+
+			sem_wait(sem_var_ack);
+			sem_wait(sem_var_prioridad_request);
+			sem_wait(sem_var_mi_ticket);
+
 			if (mensaje.prioridad == datos->prioridad_request && datos->mi_ticket== ticket_origen){
 			 printf("SE SATISFACEN LAS CONDICIONES ENTONCES GUARDAS ACK\n");
 				datos->ack++; // SOLO SUMAS LOS ACKS SI TE LLEGAN DE LA PRIORIDAD CORRESPONDIENTE Y EL MISMO TICKET CON EL QUE SE ENVIÓ
 			}else{ 
 				printf("NO SUMO ACK NO SAISFACE CONDICIONES\n");
 			}
+
+			sem_post(sem_var_ack);
+			sem_post(sem_var_prioridad_request);
+			sem_post(sem_var_mi_ticket);
 			printf("ack %d\n", datos->ack);
 
 			// COMO SOLO PUDO HABER PEDIDO UN PROCESO ENTONCES SI NOS HAN LLEGADO N-1 ACKS SIMPLEMENTE DESPERTAMOS AL DE MAYOR PRIORIDAD
 
+			sem_wait(sem_var_cont_prioridades);
+			sem_wait(sem_var_ack);
 			if (datos->ack == N - 1)
 			{
 				if (datos->cont_prioridades[pagos_anulaciones] != 0)
@@ -650,6 +723,8 @@ int main(int argc, char *argv[])
 				datos->ack = 0;
 				printf("Esperando por mensajes...\n");
 			}
+			sem_post(sem_var_ack);
+			sem_post(sem_var_cont_prioridades);
 		}
 		
 		
