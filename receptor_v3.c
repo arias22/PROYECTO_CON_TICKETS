@@ -15,11 +15,10 @@
 
 int posicionv;
 #define MAX(i, j) (((i) > (j)) ? (i) : (j))
-#define SIZE 50
-#define pagos_anulaciones 0
-#define reservas 1
-#define administracion 2
-#define consultas 3
+#define pagos_anulaciones 1
+#define reservas 2
+#define administracion 3
+#define consultas 4
 
 // --------- VARIABLES COMPARTIDAS----------
 typedef struct datos_comp
@@ -35,7 +34,7 @@ typedef struct datos_comp
 	int prioridad_request;
 	int procesos;
 	int primero;
-	int cont_prioridades[4];
+	int cont_prioridades[10];
 	int prioridad_procesos[100];
 	int tickets_procesos[100];
 	int ack;
@@ -113,6 +112,10 @@ void handle_sigint(int signal)
 
 int main(int argc, char *argv[])
 {
+
+	
+
+
 	struct sigaction ss;
 	ss.sa_handler = handle_sigint;
 	ss.sa_flags = 0;
@@ -139,6 +142,7 @@ int main(int argc, char *argv[])
 	int ack = 0;
 	int max_prioridad = 0;
 	int prioridad_mensaje;
+	
 
 	//-------------FIN VARIABLE PROPIAS--------------------------
 
@@ -179,10 +183,16 @@ int main(int argc, char *argv[])
 	datos->procesos = 0;
 	datos->primero = 0;
 
-	for (int i = 0; i < N; i++)
-	{
-		datos->id_nodos_pend[i] = 0;
-	}
+	datos->mi_ticket=0;
+	datos->quiero=0;
+	
+	 for(int i=0;i<N;i++){
+	 	datos->id_nodos_pend[i]=0;
+	 }
+
+	datos->num_pend=0;
+	datos->max_ticket=0;
+
 
 	//---------------------------------------DECLARACION SEMÁFOROS--------------------------------------------------------------
 	char name_mutex[50];
@@ -277,36 +287,46 @@ int main(int argc, char *argv[])
 		id_nodo_origen = mensaje.mi_id;
 		prioridad_mensaje = mensaje.prioridad;
 
-		// COMPROBAMOS EL TIPO DE MENSAJE (CANCELACION, ACK O REQUEST)tipo_mensaje
+		// COMPROBAMOS EL TIPO DE MENSAJE (ACK O REQUEST)tipo_mensaje
 
 		// CASO REQUEST
 
 		if (mensaje.tipo_mensaje == 0)
 		{
+			printf("Me llegó un mensaje de %d con el ticket %i y prioridad %d\n", id_nodo_origen, ticket_origen, max_prioridad);
+
 
 
 			//SI NOS LLEGA UN REQUEST DE MAYOR PRIORIDAD CUANDO HAY CONCURRENCIA DE CONSULTAS CIERRAS EL GRIFO
 
-			if(datos->grifo==1 && mensaje.prioridad<consultas) datos->grifo = 0;
-
-			//CASO CONCURRENCIA CONSULTAS =====> TIENES CONSULTAS EN SC Y RECIBES CONSULTAS
-
-			if(mensaje.prioridad == consultas && datos->prioridad_request == consultas){
-				printf("Envio OK a buzon %d\n", id_nodo_origen);
-				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
-				mensaje.mi_id = buzon;			// INIDICA TU NODO
-				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
-
-				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+			if(datos->grifo==1 && mensaje.prioridad<consultas) {
+				
+				printf("COMO ME LLEGA UN PROCESO MAS PRIORITARIO QUE CONSULTAS CIERRO GRIFO!!!!!!!!!!!!!!!\n");	
+				datos->grifo = 0;
 			}
 
 
 
+			//CASO CONCURRENCIA CONSULTAS =====> SI EL ULTIMO REQUEST ES DE CONSULTAS ENTONCES PUEDES RESPONDER CONSULTAS
+
+			if(mensaje.prioridad == consultas && datos->prioridad_request == consultas){
+				printf("ME LLEGA UN REQUEST DE UN CONSULTAS Y COMO TENGO CONSULTAS LE RESPONDO jejejej\n");
+				printf("Envio OK a buzon %d\n", id_nodo_origen);
+				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
+				mensaje.mi_id = buzon;			// INIDICA TU NODO
+				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
+				mensaje.mi_ticket= ticket_origen;
+
+				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
+			}else{
 
 
-			printf("Me llegó un mensaje de %d con el ticket %i y prioridad %d\n", id_nodo_origen, ticket_origen, max_prioridad);
 
-			sem_wait(sem_mutex);
+
+
+			
+
+		
 
 			datos->max_ticket = MAX(datos->max_ticket, ticket_origen); // compara su ticket con el ticket del que le llego
 
@@ -319,28 +339,27 @@ int main(int argc, char *argv[])
 			printf("PRIORIDAD DEL MENSAJE %d\n", prioridad_mensaje);
 			printf("PRIORIDAD DE MI REQUEST %d\n", datos->prioridad_request);
 			printf("MI TICKET:%d\n", datos->mi_ticket);
+			printf("DENTRO:%d\n",datos->dentro);
 
-			if (prioridad_mensaje < datos->prioridad_request && datos->espera != 0 && datos->dentro == 0)
+			if (prioridad_mensaje < datos->prioridad_request && datos->dentro == 0)
 			{
 
 				printf("BORRO ACKS\n");
 				datos->ack = 0;
-				printf("Envio OK a buzon %d\n", id_nodo_origen);
+				printf("ENVIO OK AL BUZON  %d PORQUE ME SUPERA EN PRIORIDAD\n", id_nodo_origen);
 				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
 				mensaje.mi_id = buzon;			// INIDICA TU NODO
 				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
+				mensaje.mi_ticket= ticket_origen;
 
 				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 
 				//ACTUALIZO EL TICKET
 				datos->mi_ticket = datos->max_ticket + 1;
+				printf("VUELVO A PEDIR UN REQUEST\n");
 				for (int i = 0; i <= N - 1; i++)
 				{
 					if (1235 + i != buzon) {
-
-
-
-						
 
 						mensaje.mtype = 1235 + i;					  // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
 						mensaje.mi_id = buzon;						  // INIDICA TU NODO
@@ -354,13 +373,16 @@ int main(int argc, char *argv[])
 					}
 				}
 			
-			else if ((!(datos->quiero) || ticket_origen < datos->mi_ticket || (ticket_origen == datos->mi_ticket & (id_nodo_origen < buzon))) && datos->dentro == 0 )
+			else if ((!(datos->quiero) || ticket_origen < datos->mi_ticket || (ticket_origen == datos->mi_ticket & (id_nodo_origen < buzon))) && datos->dentro == 0 
+			&&( datos->prioridad_request>mensaje.prioridad || datos->prioridad_request==0) )
 			{
 
-				printf("Envio OK a buzon %d\n", id_nodo_origen);
+
+				printf("ENVIO OK AL BUZON %d PORQUE TIENE MAYOR PRIORIDAD O BIEN NO TENGO NADA\n", id_nodo_origen);
 				mensaje.mtype = id_nodo_origen; // INDICA AL NODO  QUE ENVÍAS EL MENSAJE
 				mensaje.mi_id = buzon;			// INIDICA TU NODO
 				mensaje.tipo_mensaje = 1;		// INDICA EL TIPO DE MENSAJE
+				mensaje.mi_ticket = ticket_origen;
 
 				msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 			}
@@ -368,27 +390,22 @@ int main(int argc, char *argv[])
 			// CASO AÑADIR A PENDIENTES
 			else
 			{
+
+				printf("COMO ESTOY EN LA SECCIÓN CRÍTICA SUMO A PENDIENTES EN TODOS LOS CASOS\n");
+
 				datos->tickets_procesos[id_nodo_origen - 1235] = ticket_origen;               //TAMBIÉN GUARDAMOS EL TICKET
 				datos->id_nodos_pend[id_nodo_origen - 1235] = id_nodo_origen; // id_nodo_origen -1235 = posicion del nodo
 				datos->prioridad_procesos[id_nodo_origen - 1235] = prioridad_mensaje;
-				printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[id_nodo_origen - 1235], datos->prioridad_procesos[id_nodo_origen - 1235]);
 				
-				int ctr = 0;
-
 				for (int i = 0; i < N; i++)
-				{
-					if (datos->id_nodos_pend[i] != 0)
-						ctr++;
+				{ if (datos->id_nodos_pend!=0){
+    					printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[i], datos->prioridad_procesos[i]);
 				}
-				printf("Nº NODOS PENDIENTES %d\n", ctr);
-
-				for (int i = 0; i < N; i++)
-				{
-					printf("PENDIENTE NDOD %d CON PRIORIDAD %d\n", datos->id_nodos_pend[i], datos->prioridad_procesos[i]);
+					
 				}
 			}
-
-			sem_post(sem_mutex);
+			}
+			
 		}
 		
 		
@@ -399,11 +416,15 @@ int main(int argc, char *argv[])
 		{
 
 			printf("OK recibido de %d\n", id_nodo_origen);
-			printf("Prioridad destinatario %d\n", mensaje.prioridad);
+			printf("PRIORIDAD CON QUE ME LLEGA ES %d Y MI PRIORIDAD ES %d\n", mensaje.prioridad,datos->prioridad_request );
+			printf("ME LLEGA CON TICKET %d y MI TICKET ACTUAL ES %d\n",mensaje.mi_ticket, datos->mi_ticket);
 
-			if (mensaje.prioridad == datos->prioridad_request && datos->mi_ticket== ticket_origen)
+			if (mensaje.prioridad == datos->prioridad_request && datos->mi_ticket== ticket_origen){
+			 printf("SE SATISFACEN LAS CONDICIONES ENTONCES GUARDAS ACK\n");
 				datos->ack++; // SOLO SUMAS LOS ACKS SI TE LLEGAN DE LA PRIORIDAD CORRESPONDIENTE Y EL MISMO TICKET CON EL QUE SE ENVIÓ
-
+			}else{ 
+				printf("NO SUMO ACK NO SAISFACE CONDICIONES\n");
+			}
 			printf("ack %d\n", datos->ack);
 
 			// COMO SOLO PUDO HABER PEDIDO UN PROCESO ENTONCES SI NOS HAN LLEGADO N-1 ACKS SIMPLEMENTE DESPERTAMOS AL DE MAYOR PRIORIDAD
@@ -430,10 +451,21 @@ int main(int argc, char *argv[])
 					printf("[CONSULTAS] Concediendo acceso a SC\n");
 					sem_post(sem_name_paso_consulta);
 				}
+
 				datos->ack = 0;
 				printf("Esperando por mensajes...\n");
 			}
 		}
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		printf("\n\n\n");
+		
 	}
 }
