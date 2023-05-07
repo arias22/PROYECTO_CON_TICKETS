@@ -1,0 +1,10 @@
+El numero de mensaje es 2
+Proceso de prioridad 4 tardo 0.000000 en ser atendido
+Proceso de prioridad 4 tardo 0.000000 en ser atendido
+Proceso de prioridad 4 tardo 0.000000 en ser atendido
+Proceso de prioridad 4 tardo 0.000000 en ser atendido
+Proceso de prioridad 4 tardo 0.000000 en ser atendido
+El numero de mensaje es 6
+El numero de mensaje es 0
+El numero de mensaje es 1
+El numero de mensaje es 1
