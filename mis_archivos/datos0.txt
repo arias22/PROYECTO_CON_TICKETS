@@ -1,0 +1,3 @@
+El numero de mensaje es 9
+Proceso de prioridad 2 tardo 0.000161 en ser atendido
+Proceso de prioridad 1 tardo 0.000152 en ser atendido

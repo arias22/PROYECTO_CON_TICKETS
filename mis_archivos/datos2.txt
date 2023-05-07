@@ -1,0 +1,3 @@
+El numero de mensaje es 10
+Proceso de prioridad 3 tardo 0.000184 en ser atendido
+Proceso de prioridad 3 tardo 0.000059 en ser atendido

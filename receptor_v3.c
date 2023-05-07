@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <signal.h>
 
+int suma_rcv=0;
 int posicionv;
 #define MAX(i, j) (((i) > (j)) ? (i) : (j))
 #define pagos_anulaciones 1
@@ -21,14 +22,13 @@ int posicionv;
 #define consultas 4
 
 // --------- VARIABLES COMPARTIDAS----------
-typedef struct datos_comp
-{
+typedef struct datos_comp{
 	int mi_ticket;
 	int mi_id;
 	int id_nodos_pend[100];
 	int quiero;
 	int max_ticket;
-	// añadidas
+	//añadidas
 	int dentro;
 	int prioridad_request;
 	int procesos;
@@ -39,7 +39,9 @@ typedef struct datos_comp
 	int ack;
 	int numero_consultas;
 	int grifo;
-} datos_comp;
+	double tiempos[100];
+	int tiempos_prio[100];
+}datos_comp;
 
 struct msg
 {
@@ -58,6 +60,22 @@ void handle_sigint(int signal)
 	key_t clave1 = ftok(".", posicionv);
 	// BORRAR MEMORIA COMPARTIDA
 	int shmid1 = shmget(clave1, sizeof(datos_comp), IPC_CREAT | 0660);
+
+	datos_comp *datos = (datos_comp *)shmat(shmid1, 0, 0);
+
+	char current_dir[50];
+	getcwd(current_dir, sizeof(current_dir));
+		FILE *archivo;
+	char name_fichero[100];
+	sprintf(name_fichero, "%s/mis_archivos/datos%d.txt", current_dir, posicionv);
+	archivo = fopen(name_fichero, "a"); // Abre el archivo para escribir
+	fprintf(archivo, "El numero de mensaje es %d\n",suma_rcv);
+	for(int i =0;datos->tiempos_prio[i]!=0;i++){
+	fprintf(archivo, "Proceso de prioridad %d tardo %f en ser atendido\n",datos->tiempos_prio[i],datos->tiempos[i]);
+	}
+	fclose(archivo);
+
+	
 	if (shmctl(shmid1, IPC_RMID, NULL) == -1)
 	{
 		perror("Error al borrar la memoria compartida");
@@ -183,8 +201,10 @@ void handle_sigint(int signal)
 	if (sem_unlink(name_var_grifo) == -1)
 		printf("NO SE DESTRUYO BIEN name_var_grifo\n");
 
-
-
+	char char_nutex_request[50];
+	sprintf(char_nutex_request, "/char_nutex_request%d",posicionv);
+	if (sem_unlink(char_nutex_request) == -1)
+		printf("NO SE DESTRUYO BIEN char_nutex_request\n");
 	
 
 
@@ -492,6 +512,15 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
+	char char_nutex_request[50];
+	sprintf(char_nutex_request, "/char_nutex_request%s", argv[1]);
+	sem_t *mutex_request;
+	mutex_request = sem_open(char_nutex_request, O_CREAT, 0777, 1);
+	if (mutex_request == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
 	printf("Mi ID %d\n", buzon);
 
 	//---------------------------------------DECLARACION SEMÁFOROS----------------------------------------
@@ -506,9 +535,11 @@ int main(int argc, char *argv[])
 		// RECIBE LOS MENSAJE EN SU ID DE NODO
 
 		msgrcv(msqid, &mensaje, sizeof(struct msg), buzon, 0);
-
+		suma_rcv++;
 		printf("ME LLEGA UN MENSAJE DEL NODO %d CON TIPO DE MENSAJE %d\n", mensaje.mi_id, mensaje.tipo_mensaje);
-      
+        sem_wait(mutex_request);
+
+
 		ticket_origen = mensaje.mi_ticket;
 		id_nodo_origen = mensaje.mi_id;
 		prioridad_mensaje = mensaje.prioridad;
@@ -697,8 +728,10 @@ int main(int argc, char *argv[])
 
 			sem_wait(sem_var_cont_prioridades);
 			sem_wait(sem_var_ack);
+			
 			if (datos->ack == N - 1)
-			{
+			{	
+				printf("%d\n\n",datos->cont_prioridades[reservas]);
 				if (datos->cont_prioridades[pagos_anulaciones] != 0)
 				{
 					printf("[PAGOS / ANULACIONES] Concediendo acceso a SC\n");
@@ -706,6 +739,7 @@ int main(int argc, char *argv[])
 				}
 				else if (datos->cont_prioridades[reservas] != 0)
 				{
+
 					printf("[RESERVAS] Concediendo acceso a SC\n");
 					sem_post(sem_name_paso_reservas);
 				}
@@ -736,6 +770,6 @@ int main(int argc, char *argv[])
 		
 		
 		printf("\n\n\n");
-		
+		sem_post(mutex_request);
 	}
 }

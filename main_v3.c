@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <math.h>
 #include <signal.h>
+#include <time.h>
 
 int posicionv;
 #define pagos_anulaciones 1
@@ -36,6 +37,8 @@ typedef struct datos_comp{
 	int ack;
 	int numero_consultas;
 	int grifo;
+	double tiempos[100];
+	int tiempos_prio[100];
 }datos_comp;
 	
 struct msg{
@@ -81,7 +84,7 @@ sigaction(2,&ss,NULL);
 	int N = atoi(argv[2]);														//NUMERO NODOS
 	int prioridad=atoi(argv[3]);												//PRIORIDAD DEL PROCESO
 	int id_nodos=1235+posicion;													//ID DEL NODO	
-
+	
 	char array_prioridades[5][20] = { "","Pagos&Anulaciones","Reservas", "Administración","Consultas"};
 	//DE APOYO						
 	int anteriores;
@@ -90,8 +93,8 @@ sigaction(2,&ss,NULL);
 	int max_prioridad=0;
 	
 
-	 if (argc != 4){
-		printf("formato incorrecto: ./v1_main posicion N prioridad\n");
+	 if (argc != 5){
+		
 		exit(-1);
 	}
 
@@ -115,16 +118,16 @@ sigaction(2,&ss,NULL);
 	shmid1 = shmget(clave1,8*sizeof(int),0);
 	 
 	if(shmid1 !=-1){
-		printf("Zona de memoria vinculada OK! con identificador %d \n", shmid1);
+
 	}else{
-		printf("ERROR al crear zona de memoria 1 !! \n");
+
 		exit(1);
 	}
 	 
 	datos_comp *datos =(datos_comp *)shmat(shmid1,0,0);
 	 
 	if(datos == (datos_comp*)-1){
-		printf("Error al vincular el proceso a la zona de memoria 1! \n");
+
 		exit(1);
 	} 
 
@@ -339,6 +342,17 @@ sigaction(2,&ss,NULL);
 		perror("Failed to open semphore for empty");
 		exit(-1);
 	}
+
+
+	char char_nutex_request[50];
+	sprintf(char_nutex_request, "/char_nutex_request%s", argv[1]);
+	sem_t *mutex_request;
+	mutex_request = sem_open(char_nutex_request, O_CREAT, 0777, 1);
+	if (mutex_request == SEM_FAILED)
+	{
+		perror("Failed to open semphore for empty");
+		exit(-1);
+	}
 	//---------------------------------------DECLARACION SEMÁFOROS----------------------------------------
 
 
@@ -355,27 +369,29 @@ sem_post(sem_var_mi_id);
 sem_wait(sem_var_procesos);
 datos->procesos++;
 sem_post(sem_var_procesos);	
-	printf("Numero de procesos %d\n",datos->procesos);
+
 
 	//-------------------FIN INICIALIZACION DE LAS VARIABLES COMPARTIDAS----------------------------------
 
 
 	//-----------------------------INICIO PROGRAMA--------------------------------------------------------
 
-	printf("SOY UN PROCESO DE TIPO %s DEL NODO %d\n",array_prioridades[prioridad],id_nodos);
 
-	while (1) { 
+while(1){
+	
 
-
+	double t1=clock();
 
 		// Sección no crítica
-		printf("Esperando para entrar en la Sección Critica\n");
 
 
-		getchar();
+
+		//getchar();
 
 
-	 	printf("Quiero entrar en la Sección Critica\n");
+	sem_wait(mutex_request);
+
+
 	 	
 		
 
@@ -387,16 +403,16 @@ sem_post(sem_var_procesos);
 		//SI LLEGA UN PROCESO EN EL MISMO NODO CON MAYOR PRIORIDAD DE CONSULTAS Y EL GRIFO ESTÁ ABIERTO CERRAMOS EL GRIFO
 		sem_wait(sem_var_grifo);
 		if(prioridad <consultas && datos->grifo == 1){
-			printf("COMO SOY UN PROCESO DE MAYOR PRIORIDAD CIERRO GRIFO\n");
+
 			datos->grifo = 0;
 		}
 		sem_post(sem_var_grifo);
 
-	printf("hola\n");
+
 
 		//COMPRUEBAS SI HAY EN ALGUNA COLA UN PROCESO DE MAYOR DE PRIORIDAD Y LOS GUARDAS EN "max_prioridad"
        sem_wait(sem_var_cont_prioridades);
-	   printf("holadhfiewhrb\n");
+
 		if(datos->cont_prioridades[pagos_anulaciones]!=0){
 						max_prioridad=pagos_anulaciones;
 			}else if(datos->cont_prioridades[reservas]!=0){
@@ -441,7 +457,7 @@ sem_post(sem_var_procesos);
 
 					msgsnd(msqid, &mensaje, sizeof(struct msg), 0);
 					
-					printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+
 				
 				}
 			}
@@ -465,12 +481,11 @@ sem_post(sem_var_procesos);
 			//COLA PAGOS & ANULACIONES
 
 			if(prioridad==pagos_anulaciones){
-				printf("Semaforo pagos y anulaciones\n");
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] + 1 ;			//ACTUALIZAS NUMERO PROCESOS EN LA COLA
 				sem_post(sem_var_cont_prioridades);
 
-
+				sem_post(mutex_request);
 				sem_wait(sem_name_paso_pagos_anulaciones);
 				
 				sem_wait(sem_var_cont_prioridades);
@@ -483,21 +498,23 @@ sem_post(sem_var_procesos);
 			
 			
 			if(prioridad==reservas){
-				printf("Semaforo reservas\n");
+
 
 
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] + 1 ;								//ACTUALIZAS NUMERO PROCESOS EN LA COLA
 				sem_post(sem_var_cont_prioridades);
 
-
+				sem_post(mutex_request);
 				sem_wait(sem_name_paso_reservas);
 
 
-
 				sem_wait(sem_var_cont_prioridades);
+				
 				datos->cont_prioridades[reservas] = datos->cont_prioridades[reservas] - 1 ;								//ACTUALIZAS NUMERO PROCESOS EN LA COLA
+				
 				sem_post(sem_var_cont_prioridades);
+				
 			
 			}
 			
@@ -506,13 +523,13 @@ sem_post(sem_var_procesos);
 			
 			
 			if(prioridad==administracion){
-				printf("Semaforo administración\n");
+
 
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] + 1 ;					//ACTUALIZAS NUMERO PROCESOS EN LA COLA
 				sem_post(sem_var_cont_prioridades);
 
-
+				sem_post(mutex_request);
 				sem_wait(sem_name_paso_administracion);
 
 				sem_wait(sem_var_cont_prioridades);
@@ -526,17 +543,17 @@ sem_post(sem_var_procesos);
 			
 			
 			if(prioridad==consultas){
-				printf("consultas\n");
+
 				sem_wait(sem_var_grifo);
 				if(datos->grifo == 0){
 				sem_post(sem_var_grifo);
-				printf("Semaforo consultas\n");
-					printf("datos->cont_prioridades[consultas] %d\n",datos->cont_prioridades[consultas] );
+;
 
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] + 1 ;							//ACTUALIZAS NUMERO PROCESOS EN LA COLA
 				sem_post(sem_var_cont_prioridades);
 
+				sem_post(mutex_request);
 				sem_wait(sem_name_paso_consulta);
 
 				sem_wait(sem_var_cont_prioridades);
@@ -544,10 +561,14 @@ sem_post(sem_var_procesos);
 				sem_post(sem_var_cont_prioridades);
 				
 				
-				printf("datos->cont_prioridades[consultas] %d\n",datos->cont_prioridades[consultas] );
-				}else sem_post(sem_var_grifo);
 
+				}else {
+					sem_post(mutex_request);
+					sem_post(sem_var_grifo);
+				}
 				sem_wait(sem_var_grifo);
+
+
 				if(datos->grifo == 0) {
 					datos->grifo = 1;
 				sem_post(sem_var_grifo);
@@ -564,7 +585,7 @@ sem_post(sem_var_procesos);
 				datos->numero_consultas = datos->numero_consultas +1;
 				sem_post(sem_var_numero_consultas);
 
-	printf("datos->cont_prioridades[consultas] %d\n",datos->cont_prioridades[consultas] );
+
 
 			}
 
@@ -581,7 +602,6 @@ sem_post(sem_var_procesos);
 			
 
 
-		printf("Tengo todos los permisos,entrando en la Sección Crítica...\n");
 		
 	
 
@@ -592,16 +612,19 @@ sem_post(sem_var_procesos);
 
 
 
-		printf("En la Seccion Crítica\n");
+
 		
-		
+		printf("DENTRO\n");
 		sem_wait(sem_var_dentro);
 		datos->dentro = 1;
+		double t2=clock();
+		printf("1\n");
+		datos->tiempos[atoi(argv[4])]=(t2-t1)/CLOCKS_PER_SEC;
+		datos->tiempos_prio[atoi(argv[4])] = prioridad;
 		sem_post(sem_var_dentro);
+		//getchar();
 		
-		getchar();
-		
-		printf("Saliendo de la sección crítica...\n");
+
 
 
 		//IF QUE SOLO HACE CONSULTAS
@@ -639,8 +662,7 @@ sem_post(sem_var_procesos);
 				}
 				sem_post(sem_var_prioridad_procesos);
 				sem_post(sem_var_id_nodos_pend);
-			printf("max prioridad %d\n",max_prioridad);
-			printf("max prio pend %d\n",max_prio_pend);
+
 			sem_wait(sem_var_id_nodos_pend);
 			if(max_prioridad>=max_prio_pend || max_prioridad == 500){
 					
@@ -652,8 +674,7 @@ sem_post(sem_var_procesos);
 					
 					if(datos->id_nodos_pend[i]!=0){
 					
-					printf("EL NODO %d TIENE PRIORIDAD %d\n",datos->id_nodos_pend[i],datos->prioridad_procesos[i]);
-					printf("COMO ÚLTIMO DE CONSULTAS ENVIO ACKS Y EN CASO DE TENER UN PROCESO EN MIS COLAS PIDO REQUEST\n");
+
 									
 					mensaje.mi_id=id_nodos;										//INIDICA TU NODO
 
@@ -666,17 +687,17 @@ sem_post(sem_var_procesos);
 					mensaje.mi_ticket= datos->tickets_procesos[i];
 
 				
-					printf("ticket %d\n", mensaje.mi_ticket);
+
 					 msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
-				    printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
+
 				}
 
 			}
 				//BORRAMOS LOS ACK PENDIENTES
 
 				for (int i = 0; i <N; i++){
-					printf("BORRAMOS PENDIENTES\n");
+
 						datos->id_nodos_pend[i] = 0;
 						datos->prioridad_procesos[i]= 0;
 				}
@@ -684,10 +705,8 @@ sem_post(sem_var_procesos);
 			}
 			sem_post(sem_var_id_nodos_pend);
 
-			printf("DATOS_ACK %d\n",datos->ack);
-
 			if(max_prioridad!= 500){
-				printf("ENVIAMOS REQUEST POR UN PROCESO DE %d\n",max_prioridad);
+				
 				sem_wait(sem_var_mi_ticket);
 				datos->mi_ticket = datos->max_ticket + 1;
 				sem_post(sem_var_mi_ticket);
@@ -698,7 +717,7 @@ sem_post(sem_var_procesos);
 				sem_wait(sem_var_prioridad_request);
 				datos->prioridad_request = max_prioridad;
 				sem_post(sem_var_prioridad_request);
-				printf("HWHDHWQDH\n");
+				
 					for (int i = 0; i <N; i++){
 							if(1235+i!=id_nodos){
 							
@@ -711,7 +730,7 @@ sem_post(sem_var_procesos);
 
 								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
 								
-								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+								
 					
 							}
 					}
@@ -735,7 +754,7 @@ sem_post(sem_var_procesos);
 		datos->dentro = 0;
 		sem_post(sem_var_dentro);
 		sem_wait(sem_var_grifo);
-		printf("CERRAMOS GRIFO COMO ULTIMO DE CONSULTAS\n");
+	
 		datos -> grifo =0;
 		sem_post(sem_var_grifo);
 		
@@ -743,7 +762,7 @@ sem_post(sem_var_procesos);
 			}
 	else {
 		sem_post(sem_var_numero_consultas);
-		printf("\n\nCOMO NO SOY EL ÚLTIMO DE CONSULTAS NO HAGO NADA (me voy silenciosamente jejeje)\n\n");
+	
 		}
 	 
 	
@@ -753,7 +772,7 @@ sem_post(sem_var_procesos);
 		//SALIDA SECCIÓN CRÍTICA 
 
 
-
+	printf("SAlGO\n");
 
 
 		sem_wait(sem_var_quiero);
@@ -803,16 +822,15 @@ sem_post(sem_var_id_nodos_pend);
 
 
 		//SI O BIEN LAS COLAS ESTÁN VACÍA O ENCONTRAMOS EN OTRO NODO OTRO PROCESO DE PRIORIDAD MAYOR  EJECUTAMOS EL IF
-		printf("max_prioridad %d\n",max_prioridad);
-		printf("mayor %d\n",mayor);
+	
 		if(mayor==1 || max_prioridad==500 ){
-			printf("ENVIO ACKS\n");	
+			
 			//ENVIAMOS ACK PENDIENTES
 
 			sem_wait(sem_var_id_nodos_pend);
 			for (int i = 0; i <N; i++){
 				if(datos->id_nodos_pend[i]!=0){
-					printf("EL NODO %d TIENE PRIORIDAD %d\n",datos->id_nodos_pend[i],datos->prioridad_procesos[i]);
+					
 
 					mensaje.mi_ticket= datos->tickets_procesos[i];
 
@@ -830,7 +848,7 @@ sem_post(sem_var_id_nodos_pend);
 				
 					 msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 				
-				    printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
+				  
 				}
 
 			}
@@ -842,7 +860,7 @@ sem_post(sem_var_id_nodos_pend);
 
 				}	
 			sem_post(sem_var_id_nodos_pend);				
-				printf("Todos los OK pendientes enviados\n");
+				
 			
 
 
@@ -874,7 +892,7 @@ sem_post(sem_var_id_nodos_pend);
 
 								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
 								
-								printf("[REQUEST] enviado a %ld\n",mensaje.mtype);
+								
 					
 							}
 					}
@@ -902,7 +920,7 @@ sem_post(sem_var_id_nodos_pend);
 				sem_wait(sem_var_id_nodos_pend);
 				for (int i = 0; i <N; i++){
 							if(datos->id_nodos_pend[i]!=0){
-								printf("EL NODO %d TIENE PRIORIDAD %d\n",datos->id_nodos_pend[i],datos->prioridad_procesos[i]);
+								
 
 								mensaje.mi_ticket= datos->tickets_procesos[i];
 								mensaje.mi_id=id_nodos;										//INIDICA TU NODO
@@ -918,7 +936,7 @@ sem_post(sem_var_id_nodos_pend);
 							
 								if(datos->prioridad_procesos[i]==consultas)msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
 							
-								printf("[ACK] Enviando OK  a %d \n",datos->id_nodos_pend[i]);
+								
 							}
 
 
@@ -931,7 +949,7 @@ sem_post(sem_var_id_nodos_pend);
 						datos->prioridad_procesos[i]= 0;
 
 				}				
-				printf("Todos los OK pendientes enviados\n");
+				
 				sem_post(sem_var_id_nodos_pend);
 
 
@@ -956,8 +974,11 @@ sem_post(sem_var_id_nodos_pend);
 				
 		
 	}
-	printf("Fuera de la Sección Critica\n");
-	}
+break;	
+}
+
+ printf("ACABE\n");
+ return 0;
 }
 
 
