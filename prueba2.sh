@@ -4,11 +4,10 @@
 
 
 programas_receptor=(
-"./receptor_v3 0 5"
-"./receptor_v3 1 5"
-"./receptor_v3 2 5"
-"./receptor_v3 3 5"
-"./receptor_v3 4 5"
+"./receptor_v3 0 4"
+"./receptor_v3 1 4"
+"./receptor_v3 2 4"
+"./receptor_v3 3 4"
   )
 
 

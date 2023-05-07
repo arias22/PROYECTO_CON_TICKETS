@@ -1,0 +1,3 @@
+El numero de mensaje es 29
+Proceso de prioridad 3 tardo 0.000063 en ser atendido
+Proceso de prioridad 2 tardo 0.000049 en ser atendido

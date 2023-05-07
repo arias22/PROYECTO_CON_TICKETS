@@ -623,8 +623,10 @@ while(1){
 		datos->tiempos_prio[atoi(argv[4])] = prioridad;
 		sem_post(sem_var_dentro);
 		//getchar();
-		
+		sleep(0.1);
 
+
+		sem_wait(mutex_request);
 
 
 		//IF QUE SOLO HACE CONSULTAS
@@ -632,7 +634,7 @@ while(1){
 			sem_wait(sem_var_numero_consultas);
 		   datos->numero_consultas = datos->numero_consultas -1;
 		  
-		//SI NO SOMOS EL ÚLTIMO DE CONSULTAS NO HACEMOS NADA
+		  //SI NO SOMOS EL ÚLTIMO DE CONSULTAS NO HACEMOS NADA
 			if(datos->numero_consultas == 0){
 			 sem_post(sem_var_numero_consultas);
 
@@ -976,7 +978,7 @@ sem_post(sem_var_id_nodos_pend);
 	}
 break;	
 }
-
+ sem_post(mutex_request);
  printf("ACABE\n");
  return 0;
 }

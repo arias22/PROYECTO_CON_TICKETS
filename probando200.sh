@@ -7,6 +7,7 @@ y=10
 min_z=1
 max_z=4
 
+
 # Define la cantidad de ejemplos que quieres generar
 num_examples=200
 
@@ -20,9 +21,9 @@ truncate -s 0 $output_file
 touch $output_file
 
 for (( x=$min_x; x<=$max_x; x++ )); do
-    for (( i=1; i<=20; i++ )); do
+    for (( i=0; i<=19; i++ )); do
         z=$(( RANDOM % ($max_z - $min_z + 1) + $min_z ))
-        echo "\"./main_v3 $x $y $z\"" >> $output_file
+        echo "\"./main_v3 $x $y $z $i\"" >> $output_file
     done
 done
 

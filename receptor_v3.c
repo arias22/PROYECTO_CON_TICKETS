@@ -68,7 +68,7 @@ void handle_sigint(int signal)
 		FILE *archivo;
 	char name_fichero[100];
 	sprintf(name_fichero, "%s/mis_archivos/datos%d.txt", current_dir, posicionv);
-	archivo = fopen(name_fichero, "a"); // Abre el archivo para escribir
+	archivo = fopen(name_fichero, "w"); // Abre el archivo para escribir
 	fprintf(archivo, "El numero de mensaje es %d\n",suma_rcv);
 	for(int i =0;datos->tiempos_prio[i]!=0;i++){
 	fprintf(archivo, "Proceso de prioridad %d tardo %f en ser atendido\n",datos->tiempos_prio[i],datos->tiempos[i]);
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 	struct sigaction ss;
 	ss.sa_handler = handle_sigint;
 	ss.sa_flags = 0;
-	sigaction(2, &ss, NULL);
+	sigaction(1, &ss, NULL);
 
 	//-------------VARIABLE PROPIAS--------------------------
 
