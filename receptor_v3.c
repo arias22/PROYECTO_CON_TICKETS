@@ -755,7 +755,7 @@ int main(int argc, char *argv[])
 				}
 
 				datos->ack = 0;
-				printf("Esperando por mensajes...\n");
+				
 			}
 			sem_post(sem_var_ack);
 			sem_post(sem_var_cont_prioridades);
@@ -768,7 +768,7 @@ int main(int argc, char *argv[])
 		
 		
 		
-		
+		printf("Esperando por mensajes...\n");
 		printf("\n\n\n");
 		sem_post(mutex_request);
 	}

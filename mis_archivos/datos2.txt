@@ -1,3 +1,12 @@
-El numero de mensaje es 33
-Proceso de prioridad 1 tardo 0.000067 en ser atendido
-Proceso de prioridad 1 tardo 0.000048 en ser atendido
+El numero de mensaje es 16
+Proceso de prioridad 1 tardo 25.924223 en ser atendido
+Proceso de prioridad 2 tardo 27.925330 en ser atendido
+Proceso de prioridad 4 tardo 56.025595 en ser atendido
+Proceso de prioridad 3 tardo 47.979754 en ser atendido
+Proceso de prioridad 4 tardo 56.012730 en ser atendido
+Proceso de prioridad 2 tardo 27.017559 en ser atendido
+Proceso de prioridad 1 tardo 24.005789 en ser atendido
+Proceso de prioridad 2 tardo 28.913658 en ser atendido
+Proceso de prioridad 3 tardo 48.951696 en ser atendido
+Proceso de prioridad 4 tardo 55.915953 en ser atendido
+Proceso de prioridad 1 tardo 24.942448 en ser atendido

@@ -1,3 +1,31 @@
-El numero de mensaje es 23
-Proceso de prioridad 1 tardo 0.000059 en ser atendido
-Proceso de prioridad 2 tardo 0.000056 en ser atendido
+El numero de mensaje es 16
+Proceso de prioridad 1 tardo 6.952628 en ser atendido
+Proceso de prioridad 2 tardo 30.019493 en ser atendido
+Proceso de prioridad 3 tardo 51.006410 en ser atendido
+Proceso de prioridad 4 tardo 55.915534 en ser atendido
+Proceso de prioridad 1 tardo 8.881726 en ser atendido
+Proceso de prioridad 1 tardo 5.959162 en ser atendido
+Proceso de prioridad 2 tardo 34.909201 en ser atendido
+Proceso de prioridad 3 tardo 52.985374 en ser atendido
+Proceso de prioridad 4 tardo 56.061035 en ser atendido
+Proceso de prioridad 1 tardo 4.984897 en ser atendido
+Proceso de prioridad 1 tardo 4.011374 en ser atendido
+Proceso de prioridad 2 tardo 31.983802 en ser atendido
+Proceso de prioridad 3 tardo 53.936898 en ser atendido
+Proceso de prioridad 4 tardo 55.964236 en ser atendido
+Proceso de prioridad 1 tardo 7.931059 en ser atendido
+Proceso de prioridad 1 tardo 9.877763 en ser atendido
+Proceso de prioridad 2 tardo 32.936287 en ser atendido
+Proceso de prioridad 3 tardo 54.909320 en ser atendido
+Proceso de prioridad 4 tardo 55.915812 en ser atendido
+Proceso de prioridad 1 tardo 1.033662 en ser atendido
+Proceso de prioridad 1 tardo 2.007811 en ser atendido
+Proceso de prioridad 2 tardo 33.921628 en ser atendido
+Proceso de prioridad 3 tardo 51.988789 en ser atendido
+Proceso de prioridad 4 tardo 55.986726 en ser atendido
+Proceso de prioridad 1 tardo 3.031802 en ser atendido
+Proceso de prioridad 1 tardo 10.867018 en ser atendido
+Proceso de prioridad 2 tardo 31.044429 en ser atendido
+Proceso de prioridad 3 tardo 50.017769 en ser atendido
+Proceso de prioridad 4 tardo 55.928413 en ser atendido
+Proceso de prioridad 1 tardo 0.024919 en ser atendido
