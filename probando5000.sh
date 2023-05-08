@@ -2,8 +2,8 @@
 
 # Define los valores máximos y mínimos de x e y
 min_x=0
-max_x=49
-y=50
+max_x=99
+y=100
 min_z=1
 max_z=4
 
@@ -21,7 +21,7 @@ truncate -s 0 $output_file
 touch $output_file
 
 for (( x=$min_x; x<=$max_x; x++ )); do
-    for (( i=0; i<=99; i++ )); do
+    for (( i=0; i<=9; i++ )); do
         z=$(( RANDOM % ($max_z - $min_z + 1) + $min_z ))
         echo "\"sudo ./main_v3 $x $y $z $i\"" >> $output_file
     done

@@ -41,7 +41,6 @@ typedef struct datos_comp{
 	int grifo;
 	double tiempos[100];
 	int tiempos_prio[100];
-	int vuelta_n;
 }datos_comp;
 
 struct msg
@@ -67,19 +66,28 @@ void handle_sigint(int signal)
 	char current_dir[50];
 	getcwd(current_dir, sizeof(current_dir));
 		FILE *archivo;
+		FILE *archivo2;
+		FILE *archivo3;
 	char name_fichero[100];
-	sprintf(name_fichero, "%s/mis_archivos/datos%d.txt", current_dir, posicionv);
+	char name_fichero2[100];
+	char name_fichero3[100];
+	sprintf(name_fichero, "%s/mis_archivos/datos_p%d.txt", current_dir, posicionv);
+	sprintf(name_fichero3, "%s/mis_archivos/datos_n%d.txt", current_dir, posicionv);
+	sprintf(name_fichero2, "%s/mis_archivos/datos_t%d.txt", current_dir, posicionv);
 	archivo = fopen(name_fichero, "a"); // Abre el archivo para escribir
+	archivo2 = fopen(name_fichero2, "a"); // Abre el archivo para escribir
+	archivo3 = fopen(name_fichero3, "a"); // Abre el archivo para escribir
 	fprintf(archivo, "\n\n");
-	fprintf(archivo, "El numero de mensaje es %d\n",suma_rcv);
+	fprintf(archivo3, "El numero de mensaje es %d\n",suma_rcv);
 	for(int i =0;datos->tiempos_prio[i]!=0;i++){
 	fprintf(archivo, "%d\n",datos->tiempos_prio[i]);
 	}
 	for(int i =0;datos->tiempos_prio[i]!=0;i++){
-	fprintf(archivo, "%f\n",datos->tiempos[i]);
+	fprintf(archivo2, "%f\n",datos->tiempos[i]);
 	}
 	fclose(archivo);
-
+	fclose(archivo2);
+	fclose(archivo3);
 	
 	if (shmctl(shmid1, IPC_RMID, NULL) == -1)
 	{
@@ -259,18 +267,17 @@ int main(int argc, char *argv[])
 	struct msqid_ds info;
 	int msqid = msgget(500, 0666 | IPC_CREAT);
 	msqid2_glob = msqid;
-	printf("EL espacio es%ld\n",info.msg_qbytes);
+
 	
 	if(posicion == 0){ 
 	if (msgctl(msqid, IPC_STAT, &info) == -1) 
 	{ perror("msgctl"); exit(1); } 
-	info.msg_qbytes = (info.msg_qbytes+104857600); 
+	info.msg_qbytes = (info.msg_qbytes+(1000*1024*1024)); 
+		info.msg_qbytes = (info.msg_qbytes+(1000*1024*1024)); 
 	if (msgctl(msqid, IPC_SET, &info) == -1) 
 	{ perror("msgctl"); exit(1); } 
 	}
 
-
-printf("EL espacio es%ld\n",info.msg_qbytes);
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------

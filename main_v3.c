@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
-#include <math.h>
 
 int posicionv;
 #define pagos_anulaciones 1
@@ -41,7 +40,6 @@ typedef struct datos_comp{
 	int grifo;
 	double tiempos[100];
 	int tiempos_prio[100];
-	int vuelta_n;
 }datos_comp;
 	
 struct msg{
@@ -377,7 +375,6 @@ sem_wait(sem_var_procesos);
 datos->procesos++;
 sem_post(sem_var_procesos);	
 
- double vuelta_max = floor(sqrt((double) N));
 
 	//-------------------FIN INICIALIZACION DE LAS VARIABLES COMPARTIDAS----------------------------------
 
@@ -670,7 +667,6 @@ while(1){
 
 		//IF QUE SOLO HACE CONSULTAS
 		if(prioridad == consultas) {
-			datos ->vuelta_n = 0;
 			sem_wait(sem_var_numero_consultas);
 		   datos->numero_consultas = datos->numero_consultas -1;
 		  
@@ -865,7 +861,7 @@ sem_post(sem_var_id_nodos_pend);
 		//SI O BIEN LAS COLAS ESTÁN VACÍA O ENCONTRAMOS EN OTRO NODO OTRO PROCESO DE PRIORIDAD MAYOR  EJECUTAMOS EL IF
 	
 		if(mayor==1 || max_prioridad==500 ){
-			datos ->vuelta_n = 0;
+			
 			//ENVIAMOS ACK PENDIENTES
 			printf("ENVIO ACK PENDIENTES!!!!!!!!!!!!!!\n");
 			sem_wait(sem_var_id_nodos_pend);
@@ -943,122 +939,7 @@ sem_post(sem_var_id_nodos_pend);
 				}
 		}else{
 
-
-		sem_wait(sem_var_cont_prioridades);
-		if(datos->cont_prioridades[pagos_anulaciones]!=0){
-						max_prioridad=pagos_anulaciones;
-			}else if(datos->cont_prioridades[reservas]!=0){
-						max_prioridad=reservas;
-			}else if(datos->cont_prioridades[administracion]!=0){
-						max_prioridad=administracion;
-			}else if (datos->cont_prioridades[consultas]!=0){
-						max_prioridad=consultas;
-		}
-		sem_post(sem_var_cont_prioridades);
-
-		//SI ENCONTRAMOS UN PROCESO DE MAYOR PRIORIDAD ENTRE LAS PENDIENTES MARCAMOS mayor COMO 1
-		sem_wait(sem_var_prioridad_procesos);
-		sem_wait(sem_var_id_nodos_pend);
-		mayor = 10;
-		for (int i = 0; i <N; i++){
-			
-				if(mayor>datos->prioridad_procesos[i] && datos->id_nodos_pend[i]!=0){
-					mayor=datos->prioridad_procesos[i];
-				}
-		}
-		
-		sem_post(sem_var_prioridad_procesos);
-		sem_post(sem_var_id_nodos_pend);
 			//EN CASO CONTRARIO DESPIERTAS AL PROCESO DE MAYOR PRIORIDAD 
-
-		
-		
-		if(mayor == max_prioridad){
-		datos ->vuelta_n = datos ->vuelta_n + 1;
-		}
-
-
-
-
-			if(datos ->vuelta_n == vuelta_max){
-
-			sem_wait(sem_var_id_nodos_pend);
-			for (int i = 0; i <N; i++){
-				if(datos->id_nodos_pend[i]!=0){
-					
-
-					mensaje.mi_ticket= datos->tickets_procesos[i];
-
-
-					mensaje.mi_id=id_nodos;										//INIDICA TU NODO
-
-					mensaje.tipo_mensaje = 1;									//INDICA EL TIPO DE MENSAJE
-
-				    mensaje.mtype=datos->id_nodos_pend[i];						//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
-
-					mensaje.prioridad = datos->prioridad_procesos[i];			//ENVÍAS LA PRIORIDAD DEL REQUEST A QUIEN VA DIRIGIDO EL ACK
-
-
-
-				
-					 msgsnd(msqid, &mensaje,sizeof(struct msg), 0);
-				
-				  
-				}
-
-			}
-				//BORRAMOS LOS ACK PENDIENTES
-
-				for (int i = 0; i <N; i++){
-					
-						datos->id_nodos_pend[i] = 0;
-						datos->prioridad_procesos[i]= 0;
-					
-
-				}	
-			sem_post(sem_var_id_nodos_pend);				
-				
-			if(datos->cont_prioridades[pagos_anulaciones]!=0){
-						max_prioridad=pagos_anulaciones;
-			}else if(datos->cont_prioridades[reservas]!=0){
-						max_prioridad=reservas;
-			}else if(datos->cont_prioridades[administracion]!=0){
-						max_prioridad=administracion;
-			}else if (datos->cont_prioridades[consultas]!=0){
-						max_prioridad=consultas;
-																}
-
-				    sem_wait(sem_var_mi_ticket);
-					datos->mi_ticket = datos->max_ticket + 1;
-					sem_post(sem_var_mi_ticket);
-
-					sem_wait(sem_var_ack);
-					datos->ack =0;
-					sem_post(sem_var_ack);
-
-					sem_wait(sem_var_prioridad_request);
-					datos->prioridad_request = max_prioridad;
-					sem_post(sem_var_prioridad_request);
-					for (int i = 0; i <N; i++){
-							if(1235+i!=id_nodos){
-							
-							mensaje.mtype=1235+i;										//INDICA AL NODO  QUE ENVÍAS EL MENSAJE
-							mensaje.mi_id=id_nodos;										//INIDICA TU NODO
-							mensaje.prioridad=max_prioridad;						//INDICA TU PRIORIDAD
-							mensaje.tipo_mensaje = 0;									//INDICA EL TIPO DE MENSAJE
-							mensaje.mi_ticket=datos->mi_ticket;							//ENVIAS EL MENSAJE
-
-
-								msgsnd(msqid, &mensaje, sizeof(struct msg), 0);//envias mensajes request a todos los nodos	
-								
-								
-					
-							}
-					}
-
-				datos->vuelta_n = 0;
-
-			}else{
 
 			sem_wait(sem_var_cont_prioridades);
 			if(datos->cont_prioridades[pagos_anulaciones]!=0){
@@ -1122,7 +1003,7 @@ sem_post(sem_var_id_nodos_pend);
 
 				sem_post(sem_name_paso_consulta);
 			}
-		}
+
 		}
 		
 	
