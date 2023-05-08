@@ -68,10 +68,14 @@ void handle_sigint(int signal)
 		FILE *archivo;
 	char name_fichero[100];
 	sprintf(name_fichero, "%s/mis_archivos/datos%d.txt", current_dir, posicionv);
-	archivo = fopen(name_fichero, "w"); // Abre el archivo para escribir
+	archivo = fopen(name_fichero, "a"); // Abre el archivo para escribir
+	fprintf(archivo, "\n\n\n\n");
 	fprintf(archivo, "El numero de mensaje es %d\n",suma_rcv);
 	for(int i =0;datos->tiempos_prio[i]!=0;i++){
-	fprintf(archivo, "Proceso de prioridad %d tardo %f en ser atendido\n",datos->tiempos_prio[i],datos->tiempos[i]);
+	fprintf(archivo, "%d\n",datos->tiempos_prio[i]);
+	}
+	for(int i =0;datos->tiempos_prio[i]!=0;i++){
+	fprintf(archivo, "%f\n",datos->tiempos[i]);
 	}
 	fclose(archivo);
 
@@ -595,6 +599,7 @@ int main(int argc, char *argv[])
 			printf("PRIORIDAD DE MI REQUEST %d\n", datos->prioridad_request);
 			printf("MI TICKET:%d\n", datos->mi_ticket);
 			printf("DENTRO:%d\n",datos->dentro);
+			printf("QUIERO:%d\n",datos->quiero);
 
 			sem_wait(sem_var_dentro);
 			sem_wait(sem_var_prioridad_request);
@@ -642,7 +647,7 @@ int main(int argc, char *argv[])
 				}
 			 
 			else if ((!(datos->quiero) || ticket_origen < datos->mi_ticket || (ticket_origen == datos->mi_ticket & (id_nodo_origen < buzon))) && datos->dentro == 0 
-			&&( datos->prioridad_request>mensaje.prioridad || datos->prioridad_request==0) )
+			&&( datos->prioridad_request>=mensaje.prioridad || datos->prioridad_request==0) )
 			{
 			printf("HAGO SEGUNDO ELSE\n");
 			sem_post(sem_var_quiero);

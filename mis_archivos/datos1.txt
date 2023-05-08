@@ -1,31 +1,99 @@
-El numero de mensaje es 16
-Proceso de prioridad 1 tardo 12.039956 en ser atendido
-Proceso de prioridad 2 tardo 37.948546 en ser atendido
-Proceso de prioridad 3 tardo 44.042850 en ser atendido
-Proceso de prioridad 4 tardo 55.951105 en ser atendido
-Proceso de prioridad 1 tardo 15.955564 en ser atendido
-Proceso de prioridad 1 tardo 22.871600 en ser atendido
-Proceso de prioridad 2 tardo 39.919886 en ser atendido
-Proceso de prioridad 3 tardo 43.047305 en ser atendido
-Proceso de prioridad 4 tardo 55.954357 en ser atendido
-Proceso de prioridad 1 tardo 19.922385 en ser atendido
-Proceso de prioridad 1 tardo 21.886750 en ser atendido
-Proceso de prioridad 2 tardo 36.955608 en ser atendido
-Proceso de prioridad 3 tardo 45.034739 en ser atendido
-Proceso de prioridad 4 tardo 56.065977 en ser atendido
-Proceso de prioridad 1 tardo 20.895816 en ser atendido
-Proceso de prioridad 1 tardo 17.948680 en ser atendido
-Proceso de prioridad 2 tardo 36.038607 en ser atendido
-Proceso de prioridad 3 tardo 46.923545 en ser atendido
-Proceso de prioridad 4 tardo 55.912458 en ser atendido
-Proceso de prioridad 1 tardo 16.942867 en ser atendido
-Proceso de prioridad 1 tardo 14.960773 en ser atendido
-Proceso de prioridad 2 tardo 40.906551 en ser atendido
-Proceso de prioridad 3 tardo 46.014481 en ser atendido
-Proceso de prioridad 4 tardo 56.011710 en ser atendido
-Proceso de prioridad 1 tardo 13.979393 en ser atendido
-Proceso de prioridad 1 tardo 18.923378 en ser atendido
-Proceso de prioridad 2 tardo 38.929081 en ser atendido
-Proceso de prioridad 3 tardo 42.067785 en ser atendido
-Proceso de prioridad 4 tardo 56.057990 en ser atendido
-Proceso de prioridad 1 tardo 12.992758 en ser atendido
+
+
+
+
+El numero de mensaje es 11
+4
+4
+4
+4
+4
+0.013507
+0.022052
+0.015666
+0.012947
+0.012654
+
+
+
+
+El numero de mensaje es 9
+4
+4
+4
+4
+4
+0.011996
+0.011137
+0.028939
+0.022520
+0.019580
+
+
+
+
+El numero de mensaje es 9
+4
+4
+4
+4
+4
+0.012692
+0.027524
+0.027728
+0.019808
+0.016017
+
+
+
+
+El numero de mensaje es 9
+4
+4
+4
+4
+4
+0.009094
+0.000590
+0.023979
+0.024516
+0.019935
+
+
+
+
+El numero de mensaje es 11
+4
+4
+4
+4
+4
+0.025217
+0.015528
+0.016297
+0.015092
+0.013876
+
+
+
+
+El numero de mensaje es 28
+3
+0.067749
+
+
+
+
+El numero de mensaje es 24
+3
+0.040152
+
+
+
+
+El numero de mensaje es 9486
+
+
+
+
+El numero de mensaje es 21

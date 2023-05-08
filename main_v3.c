@@ -489,6 +489,8 @@ while(1){
 				printf("SOY PROCESO NUMERO %d DEL NODO %d ANTES COLA\n",atoi(argv[4]),id_nodos);
 				sem_post(mutex_request);
 				sem_wait(sem_name_paso_pagos_anulaciones);
+
+				//sem_wait(mutex_request);
 				printf("SOY PROCESO NUMERO %d DEL NODO %d DESPUES COLA \n",atoi(argv[4]),id_nodos);
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[pagos_anulaciones] = datos->cont_prioridades[pagos_anulaciones] -1 ;			//ACTUALIZAS NUMERO PROCESOS EN LA COLA
@@ -512,6 +514,7 @@ while(1){
 				printf("SOY PROCESO NUMERO %d DEL NODO %d ANTES COLA \n",atoi(argv[4]),id_nodos);
 				sem_post(mutex_request);
 				sem_wait(sem_name_paso_reservas);
+				//sem_wait(mutex_request);
 				printf("SOY PROCESO NUMERO %d DEL NODO %d DESPUES COLA \n",atoi(argv[4]),id_nodos);
 
 				sem_wait(sem_var_cont_prioridades);
@@ -538,6 +541,7 @@ while(1){
 				printf("SOY PROCESO NUMERO %d DEL NODO %d ANTES COLA \n",atoi(argv[4]),id_nodos);
 				sem_post(mutex_request);
 				sem_wait(sem_name_paso_administracion);
+				//sem_wait(mutex_request);
 				printf("SOY PROCESO NUMERO %d DEL NODO %d DESPUES COLA \n",atoi(argv[4]),id_nodos);
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[administracion] = datos->cont_prioridades[administracion] - 1 ;					//ACTUALIZAS NUMERO PROCESOS EN LA COLA
@@ -564,6 +568,9 @@ while(1){
 				printf("SOY PROCESO NUMERO %d DEL NODO %d ANTES COLA \n",atoi(argv[4]),id_nodos);
 				sem_post(mutex_request);
 				sem_wait(sem_name_paso_consulta);
+
+				//sem_wait(mutex_request);
+
 				printf("SOY PROCESO NUMERO %d DEL NODO %d DESPUES COLA \n",atoi(argv[4]),id_nodos);
 				sem_wait(sem_var_cont_prioridades);
 				datos->cont_prioridades[consultas] = datos->cont_prioridades[consultas] - 1 ;							//ACTUALIZAS NUMERO PROCESOS EN LA COLA
@@ -626,6 +633,7 @@ while(1){
 		//printf("DENTRO\n");
 		sem_wait(sem_var_dentro);
 		datos->dentro = 1;
+		//sem_post(mutex_request);
 		gettimeofday(&end, 0);
     	long seconds = end.tv_sec - begin.tv_sec;
     	long microseconds = end.tv_usec - begin.tv_usec;
@@ -637,7 +645,17 @@ while(1){
 		datos->tiempos_prio[atoi(argv[4])] = prioridad;
 		sem_post(sem_var_dentro);
 		//getchar();
-		sleep(1);
+
+
+
+
+
+
+		usleep(7000);
+
+
+
+
 
 
 		sem_wait(mutex_request);
@@ -870,8 +888,10 @@ sem_post(sem_var_id_nodos_pend);
 				//BORRAMOS LOS ACK PENDIENTES
 
 				for (int i = 0; i <N; i++){
+					
 						datos->id_nodos_pend[i] = 0;
 						datos->prioridad_procesos[i]= 0;
+					
 
 				}	
 			sem_post(sem_var_id_nodos_pend);				
@@ -964,8 +984,10 @@ sem_post(sem_var_id_nodos_pend);
 				//BORRAMOS LOS ACK PENDIENTES
 
 				for (int i = 0; i <N; i++){
+					if(datos->prioridad_procesos[i] == consultas){
 						datos->id_nodos_pend[i] = 0;
 						datos->prioridad_procesos[i]= 0;
+					}
 
 				}				
 				
