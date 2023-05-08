@@ -41,6 +41,7 @@ typedef struct datos_comp{
 	int grifo;
 	double tiempos[100];
 	int tiempos_prio[100];
+	int vuelta_n;
 }datos_comp;
 
 struct msg
