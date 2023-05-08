@@ -104,7 +104,11 @@ sigaction(2,&ss,NULL);
 	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
 
 	int msqid = msgget(500,0666 | IPC_CREAT);
-
+	if(msqid==-1){
+		perror("mssget");
+		exit(-1);
+	}
+	printf("%d\n",msqid);
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 
 
@@ -651,7 +655,7 @@ while(1){
 
 
 
-		usleep(7000);
+		usleep(1000);
 
 
 

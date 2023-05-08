@@ -10,8 +10,8 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include <math.h>
-#include <signal.h>
-#include <signal.h>
+#include <signal.h>       
+
 
 int suma_rcv=0;
 int posicionv;
@@ -69,7 +69,7 @@ void handle_sigint(int signal)
 	char name_fichero[100];
 	sprintf(name_fichero, "%s/mis_archivos/datos%d.txt", current_dir, posicionv);
 	archivo = fopen(name_fichero, "a"); // Abre el archivo para escribir
-	fprintf(archivo, "\n\n\n\n");
+	fprintf(archivo, "\n\n");
 	fprintf(archivo, "El numero de mensaje es %d\n",suma_rcv);
 	for(int i =0;datos->tiempos_prio[i]!=0;i++){
 	fprintf(archivo, "%d\n",datos->tiempos_prio[i]);
@@ -255,10 +255,21 @@ int main(int argc, char *argv[])
 	//-------------FIN VARIABLE PROPIAS--------------------------
 
 	//-----------------------CREACION DE BUZONES DE MENSAJES-----------------------------------------------------------------
-
+	struct msqid_ds info;
 	int msqid = msgget(500, 0666 | IPC_CREAT);
 	msqid2_glob = msqid;
+	printf("EL espacio es%ld\n",info.msg_qbytes);
+	
+	if(posicion == 0){ 
+	if (msgctl(msqid, IPC_STAT, &info) == -1) 
+	{ perror("msgctl"); exit(1); } 
+	info.msg_qbytes = (info.msg_qbytes+104857600); 
+	if (msgctl(msqid, IPC_SET, &info) == -1) 
+	{ perror("msgctl"); exit(1); } 
+	}
 
+
+printf("EL espacio es%ld\n",info.msg_qbytes);
 	//-----------------------FIN DE CREACION DE BUZONES DE MENSAJES----------------------------------------------------------
 
 	//-------------CREACION MEMORIA COMPARTIDA-------------------------------------

@@ -23,7 +23,7 @@ touch $output_file
 for (( x=$min_x; x<=$max_x; x++ )); do
     for (( i=0; i<=99; i++ )); do
         z=$(( RANDOM % ($max_z - $min_z + 1) + $min_z ))
-        echo "\"./main_v3 $x $y $z $i\"" >> $output_file
+        echo "\"sudo ./main_v3 $x $y $z $i\"" >> $output_file
     done
 done
 
