@@ -41,6 +41,7 @@ typedef struct datos_comp{
 	int grifo;
 	double tiempos[100];
 	int tiempos_prio[100];
+	int vuelta_n;
 }datos_comp;
 
 struct msg
@@ -78,6 +79,8 @@ void handle_sigint(int signal)
 	archivo2 = fopen(name_fichero2, "a"); // Abre el archivo para escribir
 	archivo3 = fopen(name_fichero3, "a"); // Abre el archivo para escribir
 	fprintf(archivo, "\n\n");
+	fprintf(archivo2, "\n\n");
+	fprintf(archivo3, "\n\n");
 	fprintf(archivo3, "El numero de mensaje es %d\n",suma_rcv);
 	for(int i =0;datos->tiempos_prio[i]!=0;i++){
 	fprintf(archivo, "%d\n",datos->tiempos_prio[i]);
