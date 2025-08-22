@@ -1,8 +1,4 @@
-# PROYECTO_CON_TICKETS
-
-
-
-# PROYECTO_CON_TICKETS
+# Ticket-Passing-Distributed-System-Ricart-Agrawala
 
 ## Project Overview
 This project demonstrates the implementation of the Agrawala algorithm for distributed mutual exclusion in a real distributed system. The system is written in C and uses shared memory, semaphores, and message queues to coordinate access to critical sections among multiple nodes. It simulates different process types (payments, reservations, administration, queries) and analyzes their behavior under various concurrency and priority conditions.
